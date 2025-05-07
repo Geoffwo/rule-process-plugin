@@ -21,6 +21,9 @@ stages:
         commands:
           - '# 执行脚本生成 metadata.json'
           - node ./update-metadata.js
+          - git add metadata.json       # 建议补充此行，确保 metadata.json 被提交
+          - git commit -m "auto: 自动更新metadata.json" || echo "无变更"  # 提交更改，无变更时不报错
+          - git push                   # 推送到远程仓库
         caches: []
         notify: []
         strategy:
