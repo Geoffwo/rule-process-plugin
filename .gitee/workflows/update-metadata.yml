@@ -1,27 +1,25 @@
-name: 自动更新metadata.json
+version: '1.0'                   # 流水线配置版本号，固定写法
+name: update-metadata            # 流水线名称
+displayName: update-metadata     # 流水线展示名称
+triggers:                        # 触发器配置
+  trigger: auto                  # 自动触发
+  push:                          # push 事件触发
+    branches:
+      prefix:
+        - ''                     # 匹配所有分支
 
-on:
-  push:
-    paths:
-      - 'plugins/**'
-      - 'update-metadata.js'
-
-jobs:
-  update-metadata:
-    runs-on: ubuntu-latest
+stages:
+  - name: stage-generate-metadata
+    displayName: 生成并提交metadata.json
+    strategy: naturally
+    trigger: auto
     steps:
-      - name: 拉取代码
-        uses: actions/checkout@v2
-
-      - name: 安装Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '14.18.0'
-
-      - name: 运行脚本生成metadata.json
-        run: node ./update-metadata.js
-
-      - name: 提交并推送metadata.json
-        run: |
-          git commit -m "auto: 自动更新metadata.json" || echo "无变更"
-          git push
+      - step: build@nodejs
+        name: build_nodejs
+        displayName: 生成metadata.json
+        nodeVersion: 14.16.0
+        commands:
+          - node ./update-metadata.js   # 执行脚本生成 metadata.json
+          - git add metadata.json       # 建议补充此行，确保 metadata.json 被提交
+          - git commit -m "auto: 自动更新metadata.json" || echo "无变更"  # 提交更改，无变更时不报错
+          - git push                   # 推送到远程仓库
