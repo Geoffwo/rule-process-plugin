@@ -1,0 +1,27 @@
+name: 自动更新metadata.json
+
+on:
+  push:
+    paths:
+      - 'plugins/**'
+      - 'update-metadata.js'
+
+jobs:
+  update-metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v2
+
+      - name: 安装Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14.18.0'
+
+      - name: 运行脚本生成metadata.json
+        run: node ./update-metadata.js
+
+      - name: 提交并推送metadata.json
+        run: |
+          git commit -m "auto: 自动更新metadata.json" || echo "无变更"
+          git push

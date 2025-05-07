@@ -1,14 +1,10 @@
 {
-    "plugins": {
-      "markdown-parser": {
-        "versions": {
-          "1.0.0": {
-            "url": "https://gitee.com/yourname/my-plugins-repo/raw/master/plugins/markdown-parser/1.0.0.js"
-          },
-          "1.1.0": {
-            "url": "https://gitee.com/yourname/my-plugins-repo/raw/master/plugins/markdown-parser/1.1.0.js"
-          }
-        }
+  "xlsx2json": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/xlsx2json/1.0.0.js",
+        "github": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/xlsx2json/1.0.0.js"
       }
     }
   }
+}
