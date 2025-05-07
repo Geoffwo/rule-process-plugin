@@ -1,0 +1,14 @@
+{
+    "plugins": {
+      "markdown-parser": {
+        "versions": {
+          "1.0.0": {
+            "url": "https://gitee.com/yourname/my-plugins-repo/raw/master/plugins/markdown-parser/1.0.0.js"
+          },
+          "1.1.0": {
+            "url": "https://gitee.com/yourname/my-plugins-repo/raw/master/plugins/markdown-parser/1.1.0.js"
+          }
+        }
+      }
+    }
+  }
