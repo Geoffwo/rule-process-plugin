@@ -25,7 +25,7 @@ stages:
           - '# 执行脚本生成 metadata.json readme'
           - node ./auto-update.js
           - ''
-          - '# 规避​流水线不同阶段的工作目录隔离​​'
+          - '# 规避 流水线不同阶段的工作目录隔离 '
           - '# 配置 Git 身份（必须与令牌所有者一致）'
           - git config --global user.name "geoffwo"
           - git config --global user.email "geoffwo@gmail.com"
