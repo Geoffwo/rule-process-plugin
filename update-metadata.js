@@ -42,6 +42,7 @@ function updateMetadata() {
   // fs.writeFileSync(metadataPath, JSON.stringify({ plugins }, null, 2), 'utf-8');
   fs.writeFileSync(metadataPath, JSON.stringify(plugins, null, 2), 'utf-8');
   console.log('metadata.json 已自动更新');
+  console.log(metadataPath);
 }
 
 updateMetadata();
