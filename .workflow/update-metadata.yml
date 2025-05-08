@@ -27,8 +27,8 @@ stages:
           - ''
           - '# 规避​流水线不同阶段的工作目录隔离​​'
           - '# 配置 Git 身份（必须与令牌所有者一致）'
-          - git config --global user.name "Geoffwo"
-          - git config --global user.email "Geoffwo@gmail.com"
+          - git config --global user.name "geoffwo"
+          - git config --global user.email "geoffwo@gmail.com"
           - ''
           - '# 提交变更'
           - 'git add .   # 添加所有变更文件（包括 JS 和 metadata.json）'
