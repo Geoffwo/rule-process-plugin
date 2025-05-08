@@ -6,7 +6,10 @@ triggers:
   push:
     branches:
       prefix:
-        - ''
+        - master
+variables:
+  global:
+    - TOKEN
 stages:
   - name: stage-5f7636e6
     displayName: 执行脚本
@@ -21,9 +24,6 @@ stages:
         commands:
           - '# 执行脚本生成 metadata.json'
           - node ./update-metadata.js
-          - git add metadata.json
-          - git commit -m "auto: 自动更新metadata.json" || echo "无变更"
-          - git push "https://${TOKEN}@gitee.com/Geoffwo/rule-process-plugin.git" HEAD:refs/heads/master
         caches: []
         notify: []
         strategy:
