@@ -24,6 +24,7 @@ stages:
         commands:
           - '# 执行脚本生成 metadata.json'
           - node ./update-metadata.js
+          - git --version
         caches: []
         notify: []
         strategy:
