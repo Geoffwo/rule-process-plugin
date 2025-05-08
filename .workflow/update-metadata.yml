@@ -44,7 +44,7 @@ stages:
           - git config --global user.email "Geoffwo@gmail.com"
           - ''
           - '# 提交变更'
-          - git add metadata.json
+          - 'git add .   # 添加所有变更文件（包括 JS 和 metadata.json）'
           - git commit -m "[ci skip] Auto-update metadata" || echo "No changes to commit"
           - ''
           - '# 使用 HTTPS + 令牌推送'
