@@ -43,6 +43,15 @@ function updateMetadata() {
   fs.writeFileSync(metadataPath, JSON.stringify(plugins, null, 2), 'utf-8');
   console.log('metadata.json 已自动更新');
   console.log(metadataPath);
+  console.log(require(metadataPath));
+
+  // 读取并打印文件内容
+  try {
+    const content = fs.readFileSync(metadataPath, 'utf-8');
+    console.log('metadata.json 内容:\n', content);
+  } catch (err) {
+    console.error('读取 metadata.json 失败:', err);
+  }
 }
 
 updateMetadata();
