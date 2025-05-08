@@ -38,6 +38,7 @@ function collectPlugins() {
 // 写入 metadata.json
 function updateMetadata() {
   const plugins = collectPlugins();
+  console.log('plugins',plugins);
   // fs.writeFileSync(metadataPath, JSON.stringify({ plugins }, null, 2), 'utf-8');
   fs.writeFileSync(metadataPath, JSON.stringify(plugins, null, 2), 'utf-8');
   console.log('metadata.json 已自动更新');
