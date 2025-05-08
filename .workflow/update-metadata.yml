@@ -49,13 +49,7 @@ stages:
           - ''
           - '# 使用 HTTPS + 令牌推送'
           - git push https://Geoffwo:$ACCESS_TOKEN@gitee.com/Geoffwo/rule-process-plugin.git master
-        artifacts:
-          - name: BUILD_ARTIFACT
-            path:
-              - ./dist
-        caches:
-          - ~/.npm
-          - ~/.yarn
+        caches: []
         notify: []
         strategy:
           retry: '0'
