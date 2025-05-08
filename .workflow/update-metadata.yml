@@ -7,9 +7,6 @@ triggers:
     branches:
       prefix:
         - master
-variables:
-  global:
-    - TOKEN
 stages:
   - name: stage-5f7636e6
     displayName: 执行脚本
@@ -24,12 +21,38 @@ stages:
         commands:
           - '# 执行脚本生成 metadata.json'
           - node ./update-metadata.js
-          - git config --global user.name "github-actions"
-          - git config --global user.email "actions@github.com"
-          - git add metadata.json
-          - git commit -m "Auto-update metadata" || echo "No changes to commit"
-          - git push
         caches: []
+        notify: []
+        strategy:
+          retry: '0'
+  - name: stage-e35b0c72
+    displayName: git推送
+    strategy: naturally
+    trigger: auto
+    executor: []
+    steps:
+      - step: build@nodejs
+        name: build_nodejs
+        displayName: Nodejs 构建
+        nodeVersion: 14.16.0
+        commands:
+          - '# 配置 Git 身份（必须与令牌所有者一致）'
+          - git config --global user.name "Geoffwo"
+          - git config --global user.email "Geoffwo@gmail.com"
+          - ''
+          - '# 提交变更'
+          - git add metadata.json
+          - git commit -m "[ci skip] Auto-update metadata" || echo "No changes to commit"
+          - ''
+          - '# 使用 HTTPS + 令牌推送'
+          - git push https://Geoffwo:$ACCESS_TOKEN@gitee.com/Geoffwo/rule-process-plugin.git master
+        artifacts:
+          - name: BUILD_ARTIFACT
+            path:
+              - ./dist
+        caches:
+          - ~/.npm
+          - ~/.yarn
         notify: []
         strategy:
           retry: '0'
