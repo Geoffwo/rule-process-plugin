@@ -45,5 +45,8 @@ module.exports = {
   name: 'xlsx2json',
   version: '1.0.0',
   process: writingRules,
-  description:'主要用于将xlsx文件转化为json'
+  description:'主要用于将xlsx文件转化为json',
+  rely:{//默认 latest
+    xlsx: '0.18.0'
+  }
 };
