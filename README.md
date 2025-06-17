@@ -13,6 +13,7 @@ rule-process-plugin/
 <!-- PLUGIN_LIST_START -->
 | 插件名称 | 版本 | Gitee 链接 | GitHub 链接 |
 |----------|------|------------|-------------|
+| signature | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/signature/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/signature/1.0.0.js) |
 | xlsx2json | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/xlsx2json/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/xlsx2json/1.0.0.js) |
 | zip2pwd | 1.0.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/zip2pwd/1.0.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/zip2pwd/1.0.1.js) |
 | zip2pwd | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/zip2pwd/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/zip2pwd/1.0.0.js) |
