@@ -106,5 +106,8 @@ module.exports = {
   name: 'zip2pwd',
   version: '1.0.0',
   process: writingRules,
-  description:'主要用于处理ZIP文件，支持基本的加密（ZipCrypto），但不支持AES加密。'
+  description:'主要用于处理ZIP文件，支持基本的加密（ZipCrypto），但不支持AES加密。',
+  rely:{//默认 latest
+    'adm-zip': '0.5.16'
+  }
 };

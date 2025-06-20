@@ -1,5 +1,15 @@
 const AdmZip = require('adm-zip'); // 引入zip文件处理库
 
+// 递归查找ZIP中第一个文件条目（跳过目录）
+function findFirstFileEntry(entries) {
+  for (const entry of entries) {
+    if (!entry.isDirectory) {
+      return entry;
+    }
+  }
+  return null;
+}
+
 // 密码生成器，支持多种来源
 function* pwdGenerator() {
   // 1. 内置常见密码，使用循环生成
@@ -54,7 +64,14 @@ async function writingRules(inputArray, outputNodeTemplate) {
       continue;
     }
 
-    const firstEntry = entries[0];//获取第一个文件
+    // 查找第一个有效文件
+    const firstEntry = findFirstFileEntry(entries);
+    if (!firstEntry) {
+      results.push({file: zipPath, password: null, msg: '未找到文件条目（仅有目录）'});
+      continue;
+    }
+
+    // const firstEntry = entries[0];//获取第一个文件
     const isEncrypted = firstEntry.header.flags & 1;// 判断是否加密
     if (!isEncrypted) {
       results.push({file: zipPath, password: null, msg: '文件未加密'});
@@ -114,5 +131,8 @@ module.exports = {
   name: 'zip2pwd',
   version: '1.0.1',
   process: writingRules,
-  description:'主要用于处理ZIP文件，支持基本的加密，但不支持AES加密。增加伪异步并发，提高查询速度。'
+  description:'主要用于处理ZIP文件，支持基本的加密，但不支持AES加密。增加伪异步并发，提高查询速度。',
+  rely:{//默认 latest
+    'adm-zip': '0.5.16'
+  }
 };
