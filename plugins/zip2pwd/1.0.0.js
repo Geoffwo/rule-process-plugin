@@ -1,5 +1,15 @@
 const AdmZip = require('adm-zip'); // 引入zip文件处理库
 
+// 递归查找ZIP中第一个文件条目（跳过目录）
+function findFirstFileEntry(entries) {
+  for (const entry of entries) {
+    if (!entry.isDirectory) {
+      return entry;
+    }
+  }
+  return null;
+}
+
 // 密码生成器，支持多种来源
 function* passwordGenerator() {
   // 1. 内置常见密码，使用循环生成
@@ -43,7 +53,14 @@ function writingRules(inputArray, outputNodeTemplate) {
       continue;
     }
 
-    const firstEntry = entries[0];
+    // 查找第一个有效文件
+    const firstEntry = findFirstFileEntry(entries);
+    if (!firstEntry) {
+      results.push({file: zipPath, password: null, msg: '未找到文件条目（仅有目录）'});
+      continue;
+    }
+
+    // const firstEntry = entries[0];//如果是目录，会异常，找到文件
     const isEncrypted = firstEntry.header.flags & 1;
     if (!isEncrypted) {
       results.push({file: zipPath, password: null, msg: '文件未加密'});
