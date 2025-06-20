@@ -100,36 +100,35 @@ async function writingRules(inputArray, outputNodeTemplate) {
   }
 
   // 处理每个音频文件
-  const result = [];
+  const contents = [];
   for (const file of audioFiles) {
     try {
       // 1. 校验WAV格式
       if (!validateWavFormat(file.content)) {
-        throw new Error('WAV文件格式不正确，需要16kHz采样率、单声道');
+        contents.push({
+          fileName: file.name,
+          content: `WAV文件格式不正确，需要16kHz采样率、单声道，建议使用audio2wav插件处理`
+        });
+        continue;
       }
 
       // 2. 语音识别
       const transcription = await recognizeAudio(model, file.content);
 
       // 3. 生成结果
-      result.push({
-        ...outputNodeTemplate,
-        fileName: `p-${path.basename(file.name, path.extname(file.name))}`,
-        normExt: 'txt',
+      contents.push({
+        fileName: file.name,
         content: transcription
       });
     } catch (error) {
-      console.error(`处理文件 ${file.name} 时出错:`, error);
-      result.push({
-        ...outputNodeTemplate,
-        fileName: `error-${file.name}`,
-        normExt: 'txt',
+      contents.push({
+        fileName: file.name,
         content: `处理失败: ${error.message}`
       });
     }
   }
 
-  return result;
+  return [{...outputNodeTemplate,content:JSON.stringify(contents)}];
 }
 
 // module.exports = writingRules;
@@ -143,5 +142,6 @@ module.exports = {
   notes:{
     node:'14.18.0',
     python:'3.9.13',
+    'vosk-model':'vosk-model-small-cn-0.22'
   }
 };
