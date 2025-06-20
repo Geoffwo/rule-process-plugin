@@ -162,5 +162,6 @@ module.exports = {
   name: 'signature',
   version: '1.0.0',
   process: writingRules,
-  description:'文件签名与验证工具：支持生成RSA密钥对、对文件进行数字签名和验证签名'
+  description:'文件签名与验证工具：支持生成RSA密钥对、对文件进行数字签名和验证签名',
+  node:'14.18.0',
 };

@@ -132,6 +132,7 @@ module.exports = {
   version: '1.0.1',
   process: writingRules,
   description:'主要用于处理ZIP文件，支持基本的加密，但不支持AES加密。增加伪异步并发，提高查询速度。',
+  node:'14.18.0',
   rely:{//默认 latest
     'adm-zip': '0.5.16'
   }

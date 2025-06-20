@@ -80,5 +80,6 @@ module.exports = {
   name: 'audio2wav',
   version: '1.0.0',
   process: writingRules,
-  description: '音频处理工具：扫描目录中的WAV/MP3文件，自动转换为16kHz单声道WAV格式，用于离线音频转文字'
+  description: '音频处理工具：扫描目录中的WAV/MP3文件，自动转换为16kHz单声道WAV格式，用于离线音频转文字',
+  node:'14.18.0',
 };

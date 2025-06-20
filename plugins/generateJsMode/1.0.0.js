@@ -53,4 +53,5 @@ module.exports = {
   version: '1.0.0',
   process: writingRules,
   description: '自动生成工具：扫描目录中的JS文件，自动生成模块化导入和导出配置',
+  node:'14.18.0',
 };
