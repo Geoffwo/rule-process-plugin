@@ -46,8 +46,10 @@ module.exports = {
   version: '1.0.0',
   process: writingRules,
   description:'主要用于将xlsx文件转化为json',
-  node:'14.18.0',
+  notes:{
+    node:'14.18.0',
+  },
   rely:{//默认 latest
-    xlsx: '0.18.0'
+    'xlsx': '0.18.0'
   }
 };

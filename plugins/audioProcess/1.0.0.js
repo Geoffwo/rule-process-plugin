@@ -54,7 +54,14 @@ async function writingRules(inputArray, outputNodeTemplate) {
   );
 
   if (!checkFFmpeg()) {
-    return [{...outputNodeTemplate, content: '错误: 系统中未找到FFmpeg指令。\n 1. 请从 https://ffmpeg.org 下载（windows推荐ffmpeg-release-full.7z）\n 2.解压缩安装FFmpeg（需配置bin到环境变量）\n 3.配置环境变量后，需要重启以更新状态'}];
+    return [{
+      ...outputNodeTemplate,
+      content:
+          '错误: 系统中未找到FFmpeg指令。\n ' +
+          '1. 请从 https://ffmpeg.org 下载（windows推荐ffmpeg-release-full.7z）\n ' +
+          '2.解压缩安装FFmpeg（需配置bin到环境变量）\n ' +
+          '3.配置环境变量后，需要重启以更新状态'
+    }];
   }
 
   // 如果没有找到音频文件
@@ -81,5 +88,8 @@ module.exports = {
   version: '1.0.0',
   process: writingRules,
   description: '音频处理工具：扫描目录中的WAV/MP3文件，自动转换为16kHz单声道WAV格式，用于离线音频转文字',
-  node:'14.18.0',
+  notes:{
+    node:'14.18.0',
+    ffmpeg: '7.1.1-full_build'
+  }
 };
