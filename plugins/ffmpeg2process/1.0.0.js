@@ -84,7 +84,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
 
 // 修正后的导出配置
 module.exports = {
-  name: 'audio2wav',
+  name: 'ffmpeg2process',
   version: '1.0.0',
   process: writingRules,
   description: '音频处理工具：扫描目录中的WAV/MP3文件，自动转换为16kHz单声道WAV格式，用于离线音频转文字',
