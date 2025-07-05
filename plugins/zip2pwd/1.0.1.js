@@ -131,7 +131,7 @@ module.exports = {
   name: 'zip2pwd',
   version: '1.0.1',
   process: writingRules,
-  description:'主要用于处理ZIP文件，支持基本的加密，但不支持AES加密。增加伪异步并发(时间轮询)，提高查询速度。',
+  description:'主要用于处理ZIP文件，支持破解基本的加密，但不支持破解AES加密。增加伪异步并发(时间轮询)，提高查询速度。',
   notes:{
     node:'14.18.0',
   },
