@@ -14,6 +14,7 @@ rule-process-plugin/
 | 插件名称 | 版本 | Gitee 链接 | GitHub 链接 |
 |----------|------|------------|-------------|
 | audio2txt | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/audio2txt/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/audio2txt/1.0.0.js) |
+| crawler-douban | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/crawler-douban/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/crawler-douban/1.0.0.js) |
 | ffmpeg2process | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/ffmpeg2process/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/ffmpeg2process/1.0.0.js) |
 | generateJsMode | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/generateJsMode/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/generateJsMode/1.0.0.js) |
 | signature | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/signature/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/signature/1.0.0.js) |
