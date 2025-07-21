@@ -82,7 +82,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
 // module.exports = writingRules;
 
 module.exports = {
-  name: 'crawler-douban',
+  name: 'crawler',
   version: '1.0.0',
   process: writingRules,
   disable: true,
