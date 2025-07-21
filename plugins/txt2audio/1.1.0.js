@@ -154,5 +154,12 @@ module.exports = {
     os: 'Windows 7或更高版本',
     framework: '.NET Framework 3.0+',
     powershell: '5.1.19'
-  }
+  },
+  input: {
+    normExt: 'txt文件'
+  },
+  output: {
+    normExt: 'wav文件、json文件',
+    format: "导出音频和son记录数据结果"
+  },
 };

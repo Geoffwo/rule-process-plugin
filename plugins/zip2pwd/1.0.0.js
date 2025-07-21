@@ -110,6 +110,13 @@ module.exports = {
   notes:{
     node:'14.18.0',
   },
+  input: {
+    normExt: 'zip文件'
+  },
+  output: {
+    normExt: 'json文件',
+    format: "[{file: 压缩包路径, password: 密码, msg: 描述}]"
+  },
   rely:{//默认 latest
     'adm-zip': '0.5.16'
   }

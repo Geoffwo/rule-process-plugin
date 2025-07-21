@@ -96,7 +96,13 @@ module.exports = {
   description: '通过JSON配置文件批量下载图片，支持单张或多张图片配置，自动处理文件名特殊字符并识别图片格式', // 匹配实际功能
   notes: {
     node: '14.18.0', // 保持支持的Node版本
-    format: 'JSON配置文件需包含name（可选）和imgUrl（必填）字段' // 补充配置格式说明
+  },
+  input: {
+    normExt: 'json文件',
+    format:"[{name:'图片名称',imgUrl:'图片下载地址'}]"
+  },
+  output: {
+    normExt: 'img文件'
   },
   rely: {
     'axios': '0.27.2', // 兼容Node 14的版本

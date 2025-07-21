@@ -151,5 +151,12 @@ module.exports = {
   notes: {
     node: '14.18.0',
     '7z': '24.08'
-  }
+  },
+  input: {
+    normExt: 'zip文件'
+  },
+  output: {
+    normExt: 'json文件+解压缩的文件',
+    format: "[{file: 压缩包路径, password: 密码, msg: 描述}]"
+  },
 };

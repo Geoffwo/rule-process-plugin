@@ -89,7 +89,13 @@ module.exports = {
   description: '获取豆瓣电影Top250榜单数据，包括电影名称、评分、短评、详情链接和海报地址', // 准确描述功能
   notes: {
     node: '14.18.0', // 明确支持的Node版本
-    usage: '无需输入参数，直接运行即可生成包含Top250电影信息的JSON文件', // 使用说明
+  },
+  input: {
+    //无需输入参数，直接运行即可生成包含Top250电影信息的JSON文件
+  },
+  output: {
+    normExt: 'json文件',
+    format: "[{id,title,rating,comment,link,imgUrl}]"
   },
   rely: { // 明确指定兼容的依赖版本
     'axios': '0.27.2', // 兼容Node 14的版本

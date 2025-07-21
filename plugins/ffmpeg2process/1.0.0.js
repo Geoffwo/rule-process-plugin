@@ -91,5 +91,12 @@ module.exports = {
   notes:{
     node:'14.18.0',
     ffmpeg: '7.1.1-full_build'
-  }
+  },
+  input: {
+    normExt: 'wav/MP3文件'
+  },
+  output: {
+    normExt: 'wav文件',
+    format: "转换为16kHz单声道WAV格式"
+  },
 };

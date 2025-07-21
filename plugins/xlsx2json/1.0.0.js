@@ -49,6 +49,13 @@ module.exports = {
   notes:{
     node:'14.18.0',
   },
+  input: {
+    normExt: 'xlsx文件'
+  },
+  output: {
+    normExt: 'json文件',
+    format: "[{name:sheet页名称,data:这一页的数据}]"
+  },
   rely:{//默认 latest
     'xlsx': '0.18.0'
   }

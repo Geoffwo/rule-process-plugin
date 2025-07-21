@@ -74,5 +74,12 @@ module.exports = {
   notes:{
     node: '14.18.0',
     "espeak-ng": '1.52.0'
-  }
+  },
+  input: {
+    normExt: 'txt文件'
+  },
+  output: {
+    normExt: 'wav文件、json文件',
+    format: "导出音频和son记录数据结果"
+  },
 };

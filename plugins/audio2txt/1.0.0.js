@@ -138,10 +138,20 @@ module.exports = {
   name: 'audio2txt',
   version: '1.0.0',
   process: writingRules,
-  description: '基于Vosk的离线语音识别插件 - 支持将16kHz单声道WAV音频文件转换为文本，无需网络连接。',
+  description: '基于Vosk的离线语音识别插件 - 支持将16kHz单声道WAV音频文件转换为文本，无需网络连接，适用于语音转文字场景',
   notes:{
     node:'14.18.0',
     python:'3.9.13',
-    'vosk-model':'vosk-model-small-cn-0.22'
+    'vosk-model':'vosk-model-small-cn-0.22' // 推荐使用的模型 需要手动下载
+  },
+  input: {
+    normExt: 'wav文件'
+  },
+  output: {
+    normExt: 'json文件',
+    format: "[{fileName:'原音频文件名',content:'识别出的文本内容'}]"
+  },
+  rely: {
+    'vosk': '0.3.39' // 兼容Node 14的稳定版本
   }
 };

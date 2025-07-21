@@ -165,5 +165,26 @@ module.exports = {
   description:'文件签名与验证工具：支持生成RSA密钥对、对文件进行数字签名和验证签名',
   notes:{
     node:'14.18.0',
-  }
+  },
+  input:[
+    {
+      normExt: '需要签名的文件、[pem文件]',
+      format:'如果没有pem文件，生成公私钥；对除pem文件外的剩余文件签名'
+    },
+    {
+      normExt: '需要校验签名的文件、sig文件、pem公钥文件',
+      format:'使用公钥验证【sig文件】和【校验文件】名字一致的文件'
+    },
+  ],
+  output: [
+    {
+      normExt: 'sig文件',
+      format: "签名文件"
+    },
+    {
+      normExt: 'json文件',
+      format: "[{fileName:文件名,msg:验证结果}]"
+    }
+  ],
+
 };
