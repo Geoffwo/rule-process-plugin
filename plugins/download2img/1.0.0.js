@@ -17,10 +17,10 @@ async function downloadImg(imgUrl) {
 
     // 获取图片类型（从响应头推测）
     const contentType = response.headers['content-type'] || '';
-    const ext = contentType.includes('png') ? 'png' :
-        contentType.includes('jpeg') ? 'jpg' :
-            'png'; // 默认png
-
+    let ext = 'png' //contentType.includes('png')或默认
+    if(contentType.includes('jpeg')){
+      ext = 'jpg'
+    }
     return {
       data: response.data,
       ext: ext
