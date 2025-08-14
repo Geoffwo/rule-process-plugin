@@ -12,22 +12,62 @@ function writingRules(inputArray,outputNodeTemplate) {
     const jsonTemplate = `
 {
   "controller": {
-    "name": "DzCppDpContorller",
-    "mapping": "dzCppDp",
-    "description": "自备电厂大屏",
+    "name": "DemoContorller",
+    "mapping": "demo",
+    "description": "控制层配置",
     "service": [
       {
-        "name": "DzCppDpService",
-        "value": "dzCppDpService"
+        "name": "DemoService",
+        "value": "demoService"
       }
     ],
     "methods": [
       {
-        "name": "textToAudio",
-        "description": "测试",
+        "name": "singleMapMethod",
+        "description": "测试-返回对象",
         "return": {
           "type":"Result",
-          "service": "dzCppDpService"
+          "service": "demoService"
+        },
+        "annotation": "@PostMapping",
+        "parameters": [
+          {
+            "name": "@RequestBody JSONObject",
+            "value": "para"
+          },
+          {
+            "name": "HttpServletRequest",
+            "value": "request"
+          }
+        ],
+        "exception": ["AppException"]
+      },
+      {
+        "name": "listMapMethod",
+        "description": "测试-返回对象数组",
+        "return": {
+          "type":"Result",
+          "service": "demoService"
+        },
+        "annotation": "@PostMapping",
+        "parameters": [
+          {
+            "name": "@RequestBody JSONObject",
+            "value": "para"
+          },
+          {
+            "name": "HttpServletRequest",
+            "value": "request"
+          }
+        ],
+        "exception": ["AppException"]
+      },
+      {
+        "name": "pageMethod",
+        "description": "测试-返回分页数据",
+        "return": {
+          "type":"Result",
+          "service": "demoService"
         },
         "annotation": "@PostMapping",
         "parameters": [
@@ -46,10 +86,40 @@ function writingRules(inputArray,outputNodeTemplate) {
 
   },
   "service": {
-    "name": "DzCppDpService",
+    "name": "DemoService",
     "methods": [
       {
-        "name": "textToAudio",
+        "name": "singleMapMethod",
+        "return": "Map<String, Object>",
+        "parameters": [
+          {
+            "name": "JSONObject",
+            "value": "para"
+          },
+          {
+            "name": "HttpServletRequest",
+            "value": "request"
+          }
+        ],
+        "exception": ["AppException"]
+      },
+      {
+        "name": "listMapMethod",
+        "return": "List<Map<String, Object>>",
+        "parameters": [
+          {
+            "name": "JSONObject",
+            "value": "para"
+          },
+          {
+            "name": "HttpServletRequest",
+            "value": "request"
+          }
+        ],
+        "exception": ["AppException"]
+      },
+      {
+        "name": "pageMethod",
         "return": "Map<String, Object>",
         "parameters": [
           {
@@ -66,14 +136,74 @@ function writingRules(inputArray,outputNodeTemplate) {
     ]
   },
   "serviceImpl": {
-    "name": "DzCppDpServiceImpl",
-    "implements": "DzCppDpService",
+    "name": "DemoServiceImpl",
+    "implements": "DemoService",
     "dao": [],
     "methods": [
       {
-        "name": "textToAudio",
+        "name": "singleMapMethod",
         "returnType": "singleMap",
-        "description": "returnType类型不同，常用方体不同，固定模式",
+        "description": "returnType类型不同，常用方法体不同，固定模式，singleMap/listMap/page",
+        "body": {
+          "params": [
+            {
+              "source": "para",
+              "type": "String",
+              "name": "screenType",
+              "method": "getString"
+            }
+          ],
+          "sqlOptions": {
+            "sql": "select now(), ? from dual",
+            "sqlParams": ["screenType"]
+          }
+        },
+        "parameters": [
+          {
+            "name": "JSONObject",
+            "value": "para"
+          },
+          {
+            "name": "HttpServletRequest",
+            "value": "request"
+          }
+        ],
+        "exception": ["AppException"]
+      },
+      {
+        "name": "listMapMethod",
+        "returnType": "listMap",
+        "description": "returnType类型不同，常用方法体不同，固定模式，singleMap/listMap/page",
+        "body": {
+          "params": [
+            {
+              "source": "para",
+              "type": "String",
+              "name": "screenType",
+              "method": "getString"
+            }
+          ],
+          "sqlOptions": {
+            "sql": "select now(), ? from dual",
+            "sqlParams": ["screenType"]
+          }
+        },
+        "parameters": [
+          {
+            "name": "JSONObject",
+            "value": "para"
+          },
+          {
+            "name": "HttpServletRequest",
+            "value": "request"
+          }
+        ],
+        "exception": ["AppException"]
+      },
+      {
+        "name": "pageMethod",
+        "returnType": "page",
+        "description": "returnType类型不同，常用方法体不同，固定模式，singleMap/listMap/page",
         "body": {
           "params": [
             {
@@ -233,7 +363,7 @@ const serviceTemplate = (service) =>{
     `
   }).join('\n')
 
-return `
+  return `
 public interface ${service.name} {
     ${serviceMethods}
 } 
@@ -268,7 +398,7 @@ const serviceImplTemplate = (serviceImpl) =>{
     }
   }).join('\n')
 
-return `
+  return `
 @Service
 public class ${serviceImpl.name} implements ${serviceImpl.implements} {
     ${daoAttributes}
@@ -313,9 +443,10 @@ const singleMap = (method,paramParts,exceptions)=>{
 }
 
 const listMap = (method, paramParts, exceptions) => {
-  const params = method.body.params.map(param =>
-      `${param.type} ${param.name} = ${param.source}.${param.getString}("${param.name}");`
-  ).join('\n');
+  // 遍历每个参数，拼接成 String dataDate = para.getString("dataDate"); 的形式
+  const params = method.body.params.map(param => `${param.type} ${param.name} = ${param.source}.${param.getString}("${param.name}");`).join('\n');
+
+  // list.add(dataDate);
   const sqlParams = method.body.sqlOptions.sqlParams.map(param => `list.add(${param});`).join('\n');
 
   return `
@@ -343,6 +474,12 @@ const listMap = (method, paramParts, exceptions) => {
 };
 
 const page = (method, paramParts, exceptions) => {
+  // 遍历每个参数，拼接成 String dataDate = para.getString("dataDate"); 的形式
+  const params = method.body.params.map(param => `${param.type} ${param.name} = ${param.source}.${param.getString}("${param.name}");`).join('\n');
+
+  // list.add(dataDate);
+  const sqlParams = method.body.sqlOptions.sqlParams.map(param => `list.add(${param});`).join('\n');
+
   return `
   @Override
   public Map<String, Object> ${method.name}(${paramParts}) throws ${exceptions} {
