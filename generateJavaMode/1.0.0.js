@@ -10,7 +10,6 @@ function writingRules(inputArray,outputNodeTemplate) {
   if(!jsonFile){
     //给出json模板
     const jsonTemplate = `
-
 {
   "controller": {
     "name": "DemoContorller",
@@ -160,7 +159,8 @@ function writingRules(inputArray,outputNodeTemplate) {
             "sqlDecides": [
               {
                 "sql": "and now() != ?",
-                "sqlParam": "screenType"
+                "sqlParam": "screenType",
+                "sqlDecide": "StringUtils.isNotBlank(screenType)"
               }
             ]
           }
@@ -196,7 +196,8 @@ function writingRules(inputArray,outputNodeTemplate) {
             "sqlDecides": [
               {
                 "sql": "and now() != ?",
-                "sqlParam": "screenType"
+                "sqlParam": "screenType",
+                "sqlDecide": "StringUtils.isNotBlank(screenType)"
               }
             ]
           }
@@ -233,7 +234,8 @@ function writingRules(inputArray,outputNodeTemplate) {
             "sqlDecides": [
               {
                 "sql": "and now() != ?",
-                "sqlParam": "screenType"
+                "sqlParam": "screenType",
+                "sqlDecide": "StringUtils.isNotBlank(screenType)"
               }
             ]
           }
@@ -436,7 +438,7 @@ const singleMap = (method,paramParts,exceptions)=>{
   //拼接条件
   const sqlDecides = method.body.sqlOptions.sqlDecides && method.body.sqlOptions.sqlDecides.map(param => {
     return `
-    if (StringUtils.isNotBlank(${param.sqlParam})) {
+    if (${param.sqlDecide}) {
       sb.append(" ${param.sql} ");
       list.add(${param.sqlParam});
     }`
@@ -483,7 +485,7 @@ const listMap = (method, paramParts, exceptions) => {
   //拼接条件
   const sqlDecides = method.body.sqlOptions.sqlDecides && method.body.sqlOptions.sqlDecides.map(param => {
     return `
-    if (StringUtils.isNotBlank(${param.sqlParam})) {
+    if (${param.sqlDecide}) {
       sb.append(" ${param.sql} ");
       list.add(${param.sqlParam});
     }`
@@ -526,7 +528,7 @@ const page = (method, paramParts, exceptions) => {
   //拼接条件
   const sqlDecides = method.body.sqlOptions.sqlDecides && method.body.sqlOptions.sqlDecides.map(param => {
     return `
-    if (StringUtils.isNotBlank(${param.sqlParam})) {
+    if (${param.sqlDecide}) {
       sb.append(" ${param.sql} ");
       list.add(${param.sqlParam});
     }`
@@ -545,7 +547,6 @@ const page = (method, paramParts, exceptions) => {
     
     sql.setSql(sb.toString());
     sql.setSqlParas(list);
-    DataStore ds = sql.executeQuery();
 
     MySqlPage page = new MySqlPage(${method.body.sqlOptions.source});
     return page.queryPage(sql);
