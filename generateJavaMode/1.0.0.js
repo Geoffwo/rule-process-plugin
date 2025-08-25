@@ -10,6 +10,7 @@ function writingRules(inputArray,outputNodeTemplate) {
   if(!jsonFile){
     //给出json模板
     const jsonTemplate = `
+
 {
   "controller": {
     "name": "DemoContorller",
@@ -154,8 +155,14 @@ function writingRules(inputArray,outputNodeTemplate) {
             }
           ],
           "sqlOptions": {
-            "sql": "select now(), ? from dual",
-            "sqlParams": ["screenType"]
+            "sql": "select now(), ? from dual where 1=1 ",
+            "sqlParams": ["screenType"],
+            "sqlDecides": [
+              {
+                "sql": "and now() != ?",
+                "sqlParam": "screenType"
+              }
+            ]
           }
         },
         "parameters": [
@@ -184,8 +191,14 @@ function writingRules(inputArray,outputNodeTemplate) {
             }
           ],
           "sqlOptions": {
-            "sql": "select now(), ? from dual",
-            "sqlParams": ["screenType"]
+            "sql": "select now(), ? from dual where 1=1 ",
+            "sqlParams": ["screenType"],
+            "sqlDecides": [
+              {
+                "sql": "and now() != ?",
+                "sqlParam": "screenType"
+              }
+            ]
           }
         },
         "parameters": [
@@ -215,8 +228,14 @@ function writingRules(inputArray,outputNodeTemplate) {
           ],
           "sqlOptions": {
             "source": "para",
-            "sql": "select now(), ? from dual",
-            "sqlParams": ["screenType"]
+            "sql": "select now(), ? from dual where 1=1 ",
+            "sqlParams": ["screenType"],
+            "sqlDecides": [
+              {
+                "sql": "and now() != ?",
+                "sqlParam": "screenType"
+              }
+            ]
           }
         },
         "parameters": [
@@ -235,7 +254,6 @@ function writingRules(inputArray,outputNodeTemplate) {
   }
 }
 `
-
     return [{ ...outputNodeTemplate, fileName:`java`,normExt:'json',content: jsonTemplate }];
 
   }
@@ -410,44 +428,66 @@ public class ${serviceImpl.name} implements ${serviceImpl.implements} {
 
 const singleMap = (method,paramParts,exceptions)=>{
   // 遍历每个参数，拼接成 String dataDate = para.getString("dataDate"); 的形式
-  const params = method.body.params.map(param => `${param.type} ${param.name} = ${param.source}.${param.getString}("${param.name}");`).join('\n');
+  const params = method.body.params && method.body.params.map(param => `${param.type} ${param.name} = ${param.source}.${param.method}("${param.name}");`).join('\n');
 
   // list.add(dataDate);
-  const sqlParams = method.body.sqlOptions.sqlParams.map(param => `list.add(${param});`).join('\n');
+  const sqlParams = method.body.sqlOptions.sqlParams && method.body.sqlOptions.sqlParams.map(param => `list.add(${param});`).join('\n');
+
+  //拼接条件
+  const sqlDecides = method.body.sqlOptions.sqlDecides && method.body.sqlOptions.sqlDecides.map(param => {
+    return `
+    if (StringUtils.isNotBlank(${param.sqlParam})) {
+      sb.append(" ${param.sql} ");
+      list.add(${param.sqlParam});
+    }`
+  }).join('\n');
+
   return ` 
-    @Override
-    public Map<String, Object> ${method.name}(${paramParts}) throws ${exceptions} {
-      ${params}
+  @Override
+  public Map<String, Object> ${method.name}(${paramParts}) throws ${exceptions} {
+    ${params}
 
-      Sql sql = new Sql();
-      List<Object> list = new ArrayList<>();
-      String sb = "${method.body.sqlOptions.sql}";
-      ${sqlParams}
-      
-      sql.setSqlParas(list);
-      DataStore ds = sql.executeQuery();
+    Sql sql = new Sql();
+    List<Object> list = new ArrayList<>();
+    StringBuilder sb = new StringBuilder();
+    sb.append("${method.body.sqlOptions.sql}");
+    ${sqlParams}
+    ${sqlDecides}
+    
+    sql.setSql(sb.toString());
+    sql.setSqlParas(list);
+    DataStore ds = sql.executeQuery();
 
-      // 处理查询结果
-      Map<String, Object> resultMap = new HashMap<>();
-      if (ds != null && ds.rowCount() > 0) {
-         // 获取第一行数据
-         DataObject dataObject = ds.get(0);
-         if (dataObject != null) {
-             resultMap.putAll(dataObject);
-         }
-      }
-
-      return resultMap;
+    // 处理查询结果
+    Map<String, Object> resultMap = new HashMap<>();
+    if (ds != null && ds.rowCount() > 0) {
+       // 获取第一行数据
+       DataObject dataObject = ds.get(0);
+       if (dataObject != null) {
+           resultMap.putAll(dataObject);
+       }
     }
+
+    return resultMap;
+  }
 `;
 }
 
 const listMap = (method, paramParts, exceptions) => {
   // 遍历每个参数，拼接成 String dataDate = para.getString("dataDate"); 的形式
-  const params = method.body.params.map(param => `${param.type} ${param.name} = ${param.source}.${param.getString}("${param.name}");`).join('\n');
+  const params = method.body.params && method.body.params.map(param => `${param.type} ${param.name} = ${param.source}.${param.method}("${param.name}");`).join('\n');
 
   // list.add(dataDate);
-  const sqlParams = method.body.sqlOptions.sqlParams.map(param => `list.add(${param});`).join('\n');
+  const sqlParams = method.body.sqlOptions.sqlParams && method.body.sqlOptions.sqlParams.map(param => `list.add(${param});`).join('\n');
+
+  //拼接条件
+  const sqlDecides = method.body.sqlOptions.sqlDecides && method.body.sqlOptions.sqlDecides.map(param => {
+    return `
+    if (StringUtils.isNotBlank(${param.sqlParam})) {
+      sb.append(" ${param.sql} ");
+      list.add(${param.sqlParam});
+    }`
+  }).join('\n');
 
   return `
   @Override
@@ -455,9 +495,12 @@ const listMap = (method, paramParts, exceptions) => {
     ${params}
     Sql sql = new Sql();
     List<Object> list = new ArrayList<>();
-    String sqlStr = "${method.body.sqlOptions.sql}";
+    StringBuilder sb = new StringBuilder();
+    sb.append("${method.body.sqlOptions.sql}");
     ${sqlParams}
-    sql.setSql(sqlStr);
+    ${sqlDecides}
+    
+    sql.setSql(sb.toString());
     sql.setSqlParas(list);
     DataStore ds = sql.executeQuery();
 
@@ -475,10 +518,19 @@ const listMap = (method, paramParts, exceptions) => {
 
 const page = (method, paramParts, exceptions) => {
   // 遍历每个参数，拼接成 String dataDate = para.getString("dataDate"); 的形式
-  const params = method.body.params.map(param => `${param.type} ${param.name} = ${param.source}.${param.getString}("${param.name}");`).join('\n');
+  const params = method.body.params && method.body.params.map(param => `${param.type} ${param.name} = ${param.source}.${param.method}("${param.name}");`).join('\n');
 
   // list.add(dataDate);
-  const sqlParams = method.body.sqlOptions.sqlParams.map(param => `list.add(${param});`).join('\n');
+  const sqlParams = method.body.sqlOptions.sqlParams && method.body.sqlOptions.sqlParams.map(param => `list.add(${param});`).join('\n');
+
+  //拼接条件
+  const sqlDecides = method.body.sqlOptions.sqlDecides && method.body.sqlOptions.sqlDecides.map(param => {
+    return `
+    if (StringUtils.isNotBlank(${param.sqlParam})) {
+      sb.append(" ${param.sql} ");
+      list.add(${param.sqlParam});
+    }`
+  }).join('\n');
 
   return `
   @Override
@@ -486,9 +538,12 @@ const page = (method, paramParts, exceptions) => {
     ${params}
     Sql sql = new Sql();
     List<Object> list = new ArrayList<>();
-    String sqlStr = "${method.body.sqlOptions.sql}";
+    StringBuilder sb = new StringBuilder();
+    sb.append("${method.body.sqlOptions.sql}");
     ${sqlParams}
-    sql.setSql(sqlStr);
+    ${sqlDecides}
+    
+    sql.setSql(sb.toString());
     sql.setSqlParas(list);
     DataStore ds = sql.executeQuery();
 
