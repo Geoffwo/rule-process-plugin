@@ -154,7 +154,7 @@ function writingRules(inputArray,outputNodeTemplate) {
             }
           ],
           "sqlOptions": {
-            "sql": "select now(), ? from dual where 1=1 ",
+            "sql": "select now() dateNow, ? from dual where 1=1 ",
             "sqlParams": ["screenType"],
             "sqlDecides": [
               {
@@ -162,7 +162,8 @@ function writingRules(inputArray,outputNodeTemplate) {
                 "sqlParam": "screenType",
                 "sqlDecide": "StringUtils.isNotBlank(screenType)"
               }
-            ]
+            ],
+            "sqlSuffix": "order by dateNow"
           }
         },
         "parameters": [
@@ -191,7 +192,7 @@ function writingRules(inputArray,outputNodeTemplate) {
             }
           ],
           "sqlOptions": {
-            "sql": "select now(), ? from dual where 1=1 ",
+            "sql": "select now() dateNow, ? from dual where 1=1 ",
             "sqlParams": ["screenType"],
             "sqlDecides": [
               {
@@ -199,7 +200,8 @@ function writingRules(inputArray,outputNodeTemplate) {
                 "sqlParam": "screenType",
                 "sqlDecide": "StringUtils.isNotBlank(screenType)"
               }
-            ]
+            ],
+            "sqlSuffix": "order by dateNow"
           }
         },
         "parameters": [
@@ -229,7 +231,7 @@ function writingRules(inputArray,outputNodeTemplate) {
           ],
           "sqlOptions": {
             "source": "para",
-            "sql": "select now(), ? from dual where 1=1 ",
+            "sql": "select now() dateNow, ? from dual where 1=1 ",
             "sqlParams": ["screenType"],
             "sqlDecides": [
               {
@@ -237,7 +239,8 @@ function writingRules(inputArray,outputNodeTemplate) {
                 "sqlParam": "screenType",
                 "sqlDecide": "StringUtils.isNotBlank(screenType)"
               }
-            ]
+            ],
+            "sqlSuffix": "order by dateNow"
           }
         },
         "parameters": [
@@ -455,6 +458,7 @@ const singleMap = (method,paramParts,exceptions)=>{
     sb.append("${method.body.sqlOptions.sql}");
     ${sqlParams}
     ${sqlDecides}
+    sb.append("${method.body.sqlOptions.sqlSuffix}");
     
     sql.setSql(sb.toString());
     sql.setSqlParas(list);
@@ -501,6 +505,7 @@ const listMap = (method, paramParts, exceptions) => {
     sb.append("${method.body.sqlOptions.sql}");
     ${sqlParams}
     ${sqlDecides}
+    sb.append("${method.body.sqlOptions.sqlSuffix}");
     
     sql.setSql(sb.toString());
     sql.setSqlParas(list);
@@ -544,6 +549,7 @@ const page = (method, paramParts, exceptions) => {
     sb.append("${method.body.sqlOptions.sql}");
     ${sqlParams}
     ${sqlDecides}
+    sb.append("${method.body.sqlOptions.sqlSuffix}");
     
     sql.setSql(sb.toString());
     sql.setSqlParas(list);
