@@ -43,6 +43,14 @@
       }
     }
   },
+  "img2audio": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/img2audio/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/img2audio/1.0.0.js"
+      }
+    }
+  },
   "signature": {
     "versions": {
       "1.0.0": {
