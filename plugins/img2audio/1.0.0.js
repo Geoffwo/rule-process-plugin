@@ -129,7 +129,7 @@ module.exports = {
   },
   input: {
     normExt: ['png'],              // 支持的输入文件格式
-    format: 'png音频文件'          // 输入格式描述
+    format: 'png图片文件'          // 输入格式描述
   },
   output: {
     normExt: ['wav', 'json'],      // 输出的文件格式
