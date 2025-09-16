@@ -43,6 +43,14 @@
       }
     }
   },
+  "generateJavaMode": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/generateJavaMode/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/generateJavaMode/1.0.0.js"
+      }
+    }
+  },
   "generateJsMode": {
     "versions": {
       "1.0.0": {
