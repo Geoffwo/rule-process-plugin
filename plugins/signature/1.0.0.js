@@ -164,7 +164,7 @@ module.exports = {
   process: writingRules,
   description:'文件签名与验证工具：支持生成RSA密钥对、对文件进行数字签名和验证签名',
   notes:{
-    node:'14.18.0',
+    node:'18.20.4',
   },
   input:[
     {

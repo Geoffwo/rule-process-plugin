@@ -54,7 +54,7 @@ module.exports = {
   process: writingRules,
   description: '自动生成工具：扫描目录中的JS文件，自动生成模块化导入和导出配置',
   notes:{
-    node:'14.18.0',
+    node:'18.20.4',
   },
   input: {
     normExt: 'js文件'

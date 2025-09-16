@@ -150,7 +150,7 @@ module.exports = {
   process: writingRules,
   description:'离线文本文件转语音插件，使用SAPI5引擎将TXT文件合成为WAV语音文件，仅Windows系统可用，拟真度较高，开源，可商用。',
   notes:{
-    node: '14.18.0',
+    node: '18.20.4',
     os: 'Windows 7或更高版本',
     framework: '.NET Framework 3.0+',
     powershell: '5.1.19'

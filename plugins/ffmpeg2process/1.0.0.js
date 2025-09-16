@@ -89,7 +89,7 @@ module.exports = {
   process: writingRules,
   description: '音频处理工具：扫描目录中的WAV/MP3文件，自动转换为16kHz单声道WAV格式，用于离线音频转文字',
   notes:{
-    node:'14.18.0',
+    node:'18.20.4',
     ffmpeg: '7.1.1-full_build'
   },
   input: {

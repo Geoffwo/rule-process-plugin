@@ -2,8 +2,6 @@ const { chromium } = require('playwright'); // 引入Playwright的Chromium模块
 
 // 主处理函数
 async function writingRules(inputArray, outputNodeTemplate) {
-  const plugin = getPlugin("crawler");
-  console.log(plugin())
   const browser = await chromium.launch({ headless: true }); // 启动无头Chromium浏览器(无UI)[3](@ref)
   const page = await browser.newPage(); // 创建新页面实例[4](@ref)
   const allMovies = []; // 存储所有电影数据的数组

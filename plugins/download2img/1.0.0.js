@@ -95,7 +95,7 @@ module.exports = {
   process: writingRules,
   description: '通过JSON配置文件批量下载图片，支持单张或多张图片配置，自动处理文件名特殊字符并识别图片格式', // 匹配实际功能
   notes: {
-    node: '14.18.0', // 保持支持的Node版本
+    node: '18.20.4', // 保持支持的Node版本
   },
   input: {
     normExt: 'json文件',

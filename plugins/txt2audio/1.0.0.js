@@ -72,7 +72,7 @@ module.exports = {
   process: writingRules,
   description:'离线文本文件转语音插件，使用espeak-ng将TXT文件合成为WAV语音文件，机械度较高，开源，可商用。',
   notes:{
-    node: '14.18.0',
+    node: '18.20.4',
     "espeak-ng": '1.52.0'
   },
   input: {

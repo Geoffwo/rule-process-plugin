@@ -107,7 +107,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
       if (!validateWavFormat(file.content)) {
         contents.push({
           fileName: file.name,
-          content: `WAV文件格式不正确，需要16kHz采样率、单声道，建议使用audio2wav插件处理`
+          content: `WAV文件格式不正确，需要16kHz采样率、单声道，建议使用ffmpeg2process插件处理`
         });
         continue;
       }
@@ -128,7 +128,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
     }
   }
 
-  return [{...outputNodeTemplate,content:JSON.stringify(contents)}];
+  return [{...outputNodeTemplate,content:JSON.stringify(contents,null,2)}];
 }
 
 // module.exports = writingRules;
