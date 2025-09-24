@@ -10,7 +10,8 @@ const configUtils = {
   mirrorUrl: 'https://hf-cdn.sufy.com/', // 快但不稳定
   // mirrorUrl: 'https://hf-mirror.com/', // 慢但稳定
   modelPath: path.join(process.cwd(), './examples/model'), // 本地模型根目录
-  repoName: 'Xenova/distilbert-base-uncased-finetuned-sst-2-english',
+  repoName: 'Xenova/distilbert-base-uncased-finetuned-sst-2-english',//仓库地址
+  task:'sentiment-analysis',//模型类型
   dtype:'fp32',//默认model是fp32 全精度模型
   lfsFiles: [
     'onnx/model.onnx', // 要下载的 LFS 文件模式（支持通配符）
@@ -120,7 +121,7 @@ async function analyzeSentiment(text) {
     console.log(`从本地加载模型: ${fullModelPath}`);
 
     const analyzer = await pipeline(
-        'sentiment-analysis',
+        configUtils.task,//'sentiment-analysis'
         fullModelPath,
         {
           local_files_only: true, // 只读本地文件
