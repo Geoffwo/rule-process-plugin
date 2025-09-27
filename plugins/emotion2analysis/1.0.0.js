@@ -190,7 +190,7 @@ module.exports = {
   name: 'sentiment-analysis',
   version: '1.0.0',
   process: writingRules,
-  description: '基于Hugging Face Transformers的情感分析插件 - 支持分析TXT文本文件的情感倾向（积极/消极），使用本地模型运行，自动下载所需模型文件',
+  description: '基于Hugging Face Transformers的情感分析插件 - 支持分析TXT英文文本文件的情感倾向（积极/消极），使用本地模型运行，自动下载所需模型文件',
   notes:{
     node:'18.20.4',
     model: 'Xenova/distilbert-base-uncased-finetuned-sst-2-english', // 当前使用的情感分析模型
@@ -204,7 +204,7 @@ module.exports = {
   },
   input: {
     normExt: 'txt文件',
-    description: '包含待分析文本的TXT文件，每行视为一个独立的分析单元'
+    description: '包含待分析英文文本的TXT文件，每行视为一个独立的分析单元'
   },
   output: {
     normExt: 'data文件',
