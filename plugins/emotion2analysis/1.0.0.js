@@ -211,6 +211,6 @@ module.exports = {
     format: "[{text:'行文本内容',result:'分析结果'}]"
   },
   rely: {
-    '@huggingface/transformers': '^3.7.3',
+    '@huggingface/transformers': '3.7.3',
   }
 };
