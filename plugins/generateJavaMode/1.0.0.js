@@ -567,7 +567,7 @@ module.exports = {
   name: 'generateJavaMode',
   version: '1.0.0',
   process: writingRules,
-  description: '首次默认创建java.json模板，基于java.json配置文件信息，生成负控通用java框架,可根据需求自行变更或扩展',
+  description: '首次默认创建java.json模板，基于java.json配置文件信息，生成通用java框架,可根据需求自行变更或扩展',
   notes:{
     node:'18.20.4',
   },
