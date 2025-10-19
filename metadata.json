@@ -87,6 +87,14 @@
       }
     }
   },
+  "translation": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/translation/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/translation/1.0.0.js"
+      }
+    }
+  },
   "txt2audio": {
     "versions": {
       "1.0.0": {
