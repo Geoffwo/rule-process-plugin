@@ -19,9 +19,6 @@ const configUtils = {
   getFullModelPath() {
     return path.join(this.modelPath, this.repoName.split('/').pop());
   },
-  getIncludeFiles() {
-    return this.lfsFiles.map(item => `--include="${item}"`).join(' ');
-  },
   getGitCloneUrl() {
     return this.mirrorUrl + this.repoName;
   },
@@ -100,8 +97,10 @@ async function cloneAndPrepareModel() {
     }
 
     console.log('正在拉取必要的模型文件...');
-    const includeFiles = configUtils.getIncludeFiles();
-    runCommand(`git lfs pull ${includeFiles}`, configUtils.getFullModelPath());
+    const includeFiles = configUtils.lfsFiles
+    includeFiles.forEach(includeFile => {
+      runCommand(`git lfs pull --include="${includeFile}"`, configUtils.getFullModelPath());
+    })
 
     return true;
   } catch (error) {
@@ -113,9 +112,9 @@ async function cloneAndPrepareModel() {
 // =======================
 // 执行情感分析
 // =======================
-async function analyzeSentiment(text) {
+async function runModel(text) {
   try {
-    console.log('\n开始情感分析测试');
+    console.log('\n开始运行模型');
 
     const fullModelPath = configUtils.getFullModelPath();
     console.log(`从本地加载模型: ${fullModelPath}`);
@@ -131,7 +130,7 @@ async function analyzeSentiment(text) {
 
     return await analyzer(text);
   } catch (error) {
-    console.error('情感分析出错:', error.message);
+    console.error('模型出错:', error.message);
     return false;
   }
 }
@@ -154,7 +153,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
   if (modelReady) {
     for (const file of txtFiles) {
       const contents = []
-      const testTexts = file.content.split(/\r\n/);
+      const testTexts = file.content.split(/\r?\n/);
       // const testTexts = [
       //   "I love using Hugging Face Transformers! It's amazing.",
       //   "I hate waiting for models! It's so frustrating.",
@@ -162,7 +161,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
       // ];
 
       for (const text of testTexts) {
-        const result = await analyzeSentiment(text);
+        const result = await runModel(text);
         const dict = {
           POSITIVE:'积极信息',
           NEGATIVE:'消极信息',
