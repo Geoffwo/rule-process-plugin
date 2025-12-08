@@ -90,7 +90,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
 // module.exports = writingRules;
 
 module.exports = {
-  name: 'download-img', // 插件名称：明确为图片批量下载器
+  name: 'download2img', // 插件名称：明确为图片批量下载器
   version: '1.0.0',
   process: writingRules,
   description: '通过JSON配置文件批量下载图片，支持单张或多张图片配置，自动处理文件名特殊字符并识别图片格式', // 匹配实际功能
