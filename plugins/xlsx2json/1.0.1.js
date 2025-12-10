@@ -57,7 +57,7 @@ module.exports = {
   process: writingRules,
   description:'主要用于将xlsx文件转化为json-特定-青岛车企',
   notes:{
-    node:'14.18.0',
+    node:'18.20.4',
   },
   input: {
     normExt: 'xlsx文件'
