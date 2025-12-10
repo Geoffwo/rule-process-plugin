@@ -8,7 +8,7 @@ function writingRules(inputArray, outputNodeTemplate) {
   return xlsxFiles.map(file => ({
     ...outputNodeTemplate,
     normExt:'json',
-    content: JSON.stringify(readExcel(file)) // 读取Excel内容
+    content: JSON.stringify(readExcel(file),null,2) // 读取Excel内容
   }));
 
   // return []
