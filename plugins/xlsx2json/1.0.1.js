@@ -21,14 +21,23 @@ function readExcel(file) {
     const workbook = xlsx.readFile(file.path);
 
     // 2. 遍历所有工作表
-    const sheets = workbook.SheetNames.map(sheetName => {
+    const sheets = []
+    workbook.SheetNames.forEach(sheetName => {
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = xlsx.utils.sheet_to_json(worksheet);
+      const findObj = jsonData.find(item=>item["2024年01月全行业销售电量情况统计表"] === 71);
+      const keys = Object.keys(findObj);
+      const correctKey= ['序号','行业','用电客户数-本月','用电客户数-同期','运行容量-本月','运行容量-同期','售电量-本月','售电量-同期','售电量-本月同比增速（%）','售电量-本年累计','售电量-同期累计','售电量-累计同比增速（%）']
+      const correctObj = {}
+      keys.forEach((key,index)=>{
+        const keyElement = correctKey[index] || key;
+        correctObj[keyElement] = findObj[key];
+      })
 
-      return {
+      sheets.push({
         name: sheetName,
-        data: jsonData
-      };
+        data: correctObj
+      });
     });
 
     // 3. 返回结构化结果
@@ -44,9 +53,9 @@ function readExcel(file) {
 
 module.exports = {
   name: 'xlsx2json',
-  version: '1.0.0',
+  version: '1.0.1',
   process: writingRules,
-  description:'主要用于将xlsx文件转化为json',
+  description:'主要用于将xlsx文件转化为json-特定-青岛车企',
   notes:{
     node:'14.18.0',
   },
