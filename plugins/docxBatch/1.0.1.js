@@ -31,15 +31,15 @@ async function generateReport(docxFile,outputNodeTemplate,contents){
   const outputDir = outputNodeTemplate.path // 临时目录绝对路径
   const tempDir = path.join(outputDir, './temp') // 临时目录绝对路径
   const docxFilePath = docxFile.path
-
-  console.log('开始解压DOCX模板文件...');
-  const zip = new AdmZip(docxFilePath);
-  await fs.emptyDir(tempDir); // 清空临时目录
-  zip.extractAllTo(tempDir, true);//全部解压
-  console.log('模板文件解压完成...');
-
+  
   // 2. 批量生成12个月报告
   for (let month = 1; month <= 12; month++) {
+    console.log('开始解压DOCX模板文件...');
+    const zip = new AdmZip(docxFilePath);
+    await fs.emptyDir(tempDir); // 清空临时目录
+    zip.extractAllTo(tempDir, true);//全部解压
+    console.log('模板文件解压完成...');
+
     const result = await generateMonthlyReport(tempDir, outputDir, month);
     contents.push(result);
   }
@@ -269,8 +269,7 @@ module.exports = {
   name: 'docxBatch',
   version: '1.0.1',
   process: writingRules,
-  description:'主要用于批量生成docx文件-特定-青岛',
-  disable: true,
+  description:'主要用于批量生成docx文件-增强图标修改-特定青岛',
   notes:{
     node:'18.20.4',
   },

@@ -55,7 +55,7 @@ module.exports = {
   name: 'xlsx2json',
   version: '1.0.1',
   process: writingRules,
-  description:'主要用于将xlsx文件转化为json-特定-青岛车企',
+  description:'主要用于将xlsx文件转化为json-条件筛选-特定青岛车企',
   notes:{
     node:'18.20.4',
   },
