@@ -40,6 +40,10 @@
       "1.0.1": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/docxBatch/1.0.1.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/docxBatch/1.0.1.js"
+      },
+      "1.0.2": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/docxBatch/1.0.2.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/docxBatch/1.0.2.js"
       }
     }
   },
@@ -99,6 +103,14 @@
       }
     }
   },
+  "json2xlsx": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/json2xlsx/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/json2xlsx/1.0.0.js"
+      }
+    }
+  },
   "signature": {
     "versions": {
       "1.0.0": {
@@ -136,6 +148,10 @@
       "1.0.1": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/xlsx2json/1.0.1.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/xlsx2json/1.0.1.js"
+      },
+      "1.0.2": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/xlsx2json/1.0.2.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/xlsx2json/1.0.2.js"
       }
     }
   },
