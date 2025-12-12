@@ -141,7 +141,7 @@ async function generateReport(xmlFiles,outputNodeTemplate,contents,jsonFiles){
 
 module.exports = {
   name: 'docxBatch',
-  version: '1.0.4',
+  version: '1.1.1',
   process: writingRules,
   description:'主要用于批量生成docx文件-特定青岛-1.0.3生成后，手动复制到新的word文档保存，会将图表chart重新生成，此时，对批量chart.xml进行硬编码规则处理，需要手动替换，但已减少操作成本',
   notes:{

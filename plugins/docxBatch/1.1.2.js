@@ -51,7 +51,7 @@ async function repackDocx(tempDir, outputPath) {
 
 module.exports = {
   name: 'docxBatch',
-  version: '1.0.3',
+  version: '1.1.2',
   process: writingRules,
   description:'主要用于批量生成docx文件-特定青岛-对1.0.4进行打包为docx',
   notes:{

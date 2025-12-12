@@ -864,7 +864,7 @@ async function createDefaultDocxTemplate(outputPath) {
 
 module.exports = {
   name: 'docxBatch',
-  version: '1.0.3',
+  version: '1.1.0',
   process: writingRules,
   description:'主要用于批量生成docx文件-特定青岛-增加loop循环',
   notes:{
