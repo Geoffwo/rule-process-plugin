@@ -45,6 +45,18 @@
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/docxBatch/1.0.2.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/docxBatch/1.0.2.js"
       },
+      "1.1.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/docxBatch/1.1.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/docxBatch/1.1.0.js"
+      },
+      "1.1.1": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/docxBatch/1.1.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/docxBatch/1.1.1.js"
+      },
+      "1.1.2": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/docxBatch/1.1.2.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/docxBatch/1.1.2.js"
+      },
       "1.2.0": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/docxBatch/1.2.0.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/docxBatch/1.2.0.js"
