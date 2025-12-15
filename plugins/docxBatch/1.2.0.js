@@ -345,12 +345,7 @@ async function createDefaultDocxTemplate(outputPath) {
     </w:p>
     <w:p>
       <w:r>
-        <w:t>{loop_start:categories}</w:t>
-      </w:r>
-    </w:p>
-    <w:p>
-      <w:r>
-        <w:t>{loop_start:products}</w:t>
+        <w:t>{loop_start:categories}{loop_start:products}</w:t>
       </w:r>
     </w:p>
     <w:p>
@@ -360,12 +355,7 @@ async function createDefaultDocxTemplate(outputPath) {
     </w:p>
     <w:p>
       <w:r>
-        <w:t>{loop_end:products}</w:t>
-      </w:r>
-    </w:p>
-    <w:p>
-      <w:r>
-        <w:t>{loop_end:categories}</w:t>
+        <w:t>{loop_end:products}{loop_end:categories}</w:t>
       </w:r>
     </w:p>
   </w:body>
