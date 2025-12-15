@@ -210,17 +210,8 @@ async function replaceXmlContent(xmlPath, replaceData, inputArray = []) {
   xmlContent = processLoopBlocks(xmlContent, replaceData);
   // 5. 替换基础变量
   xmlContent = replaceVariables(xmlContent, replaceData);
-  // 6. 替换{{变量}}格式占位符（兼容原有逻辑）
-  let newXmlStr = xmlContent;
-  const keys = Object.keys(replaceData);
-  keys.forEach(key => {
-    const placeholder = `{{${key}}}`;
-    const safePlaceholder = placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    newXmlStr = newXmlStr.replace(new RegExp(safePlaceholder, 'g'), replaceData[key]);
-  });
-
   // 仅返回替换后的内容，不写入文件（保持原模板不变）
-  return newXmlStr;
+  return xmlContent;
 }
 
 /** 处理条件区块 */
@@ -258,12 +249,8 @@ function processLoopBlocks(xml, data) {
 
 /** 替换基础变量 */
 function replaceVariables(xml, data) {
-  console.log('replaceVariables',xml);
-  console.log('data',data);
   return xml.replace(/\{var:(\w+(?:\.\w+)*)\}/g, (match, key) => {
-    console.log('key',key);
     const value = getNestedValue(data, key);
-    console.log('value',value);
     return escapeXml(value ?? '');
   });
 }
