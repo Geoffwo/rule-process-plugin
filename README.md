@@ -18,6 +18,7 @@ rule-process-plugin/
 | audio2txt | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/audio2txt/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/audio2txt/1.0.0.js) |
 | crawler | 1.1.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/crawler/1.1.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/crawler/1.1.0.js) |
 | crawler | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/crawler/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/crawler/1.0.0.js) |
+| docxBatch | 1.2.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/docxBatch/1.2.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/docxBatch/1.2.1.js) |
 | docxBatch | 1.2.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/docxBatch/1.2.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/docxBatch/1.2.0.js) |
 | docxBatch | 1.1.2 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/docxBatch/1.1.2.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/docxBatch/1.1.2.js) |
 | docxBatch | 1.1.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/docxBatch/1.1.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/docxBatch/1.1.1.js) |
