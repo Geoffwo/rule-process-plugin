@@ -64,6 +64,10 @@
       "1.2.1": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/docxBatch/1.2.1.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/docxBatch/1.2.1.js"
+      },
+      "1.2.2": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/docxBatch/1.2.2.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/docxBatch/1.2.2.js"
       }
     }
   },
