@@ -163,9 +163,35 @@ async function generateReport(outputPath, replaceData, tempDir, inputArray, cont
                 return `${hour}:${minute.toString().padStart(2, '0')}`;
             }
 
+            const ktType=['格力','海尔','美的','三星','小米']
+
+            // 品牌中文名 → 英文品牌名 映射表（保证格式如：海尔（Haier））
+            const brandEnMap = {
+                "格力": 'Gree',
+                "海尔": 'Haier',
+                "美的": 'Midea',
+                "三星": 'Samsung',
+                "小米": 'Xiaomi'
+            };
+
             const dataProcess={
                 timing_startIndex:getTimeByIndex(startIndex),
                 timing_endIndex:getTimeByIndex(endIndex),
+                areas:`${Math.floor(getRandom(16, 24))}㎡`,//制冷/制热面积 最终格式例如 18㎡
+                kt_type:(() => {
+                    // 随机选一个品牌索引
+                    const randomIdx = Math.floor(getRandom(0, ktType.length));
+                    const brandCn = ktType[randomIdx];
+                    const brandEn = brandEnMap[brandCn];
+                    return `${brandCn}（${brandEn}）`;
+                })(),//空调类型随机选一 最终格式例如 海尔（Haier）
+                ch_power: (() => {
+                    // 制冷功率范围：1000-3000W（合理家用空调制冷功率区间）
+                    const coolPower = Math.floor(getRandom(1000, 3000));
+                    // 制热功率范围：1500-3500W（制热功率通常略高于制冷）
+                    const heatPower = Math.floor(getRandom(1500, 3500));
+                    return `${coolPower}W / ${heatPower}W`;
+                })()//制冷/制热功率 随机生成 最终格式例如 1940W / 2880W
             }
             const options = {
                 tempDir,
@@ -511,9 +537,9 @@ function createDefaultJsonTemplate() {
 
 module.exports = {
     name: 'docxBatch',
-    version: '1.2.1',
+    version: '1.2.2',
     process: writingRules,
-    description: '主要用于批量生成docx文件-生成30个带图表文档-但是图表数据需要手动点击图表->点击编辑数据，重绘缓存',
+    description: '主要用于批量生成docx文件-简化格式-使用word文档批量合并（iloveofd.cn）实现数据批量合并为一个文档',
     notes: {
         node: '18.20.4',
     },
