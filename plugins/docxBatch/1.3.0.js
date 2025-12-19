@@ -151,6 +151,79 @@ async function updateOOXML(outputFile){
 }
 
 /**
+ * 修复OOXML格式（异步封装+容错+动态延迟）
+ * @param {string} outputFile - 文档路径
+ * @returns {Promise<void>} 确保异步流程可等待
+ */
+async function updateChartData(outputFile){
+    // 1. 同步执行打开文档命令（阻塞直到命令执行完成）
+    // 注意：start命令本身是异步打开程序，execSync仅等待命令发送完成，而非程序加载完成
+    execSync(`start "" "${outputFile}"`, {
+        stdio: 'ignore' // 忽略命令输出，避免控制台打印无关信息
+    });
+
+    await sleep(7500);
+    //2. 开始 选型卡（Alt+H）
+    console.log('模拟 Alt+H 选择 开始 选项卡...');
+    // 组合键模拟 Alt+H
+    robot.keyToggle('alt', 'down');
+    robot.keyTap('h');
+    robot.keyToggle('alt', 'up');
+
+    await sleep(1000);
+    console.log('模拟 选择第一个图表...');
+    // 选择（SL）→ 选择对象（O）->选择第一个图表（tab）
+    robot.keyTap('s');
+    robot.keyTap('l');
+
+    await sleep(300);
+    robot.keyTap('o');
+
+    //从这里开始循环 循环次数有chart.xml/xlsx数量决定
+    await sleep(300);
+    robot.keyTap('tab');
+
+    //2. 图表工具 选型卡（Alt+JC）
+    console.log('模拟 Alt+JC 选择 图表工具 选项卡...');
+    await sleep(1000);
+    // 组合键模拟 Alt+JC
+    robot.keyToggle('alt', 'down');
+    robot.keyTap('j');
+    robot.keyTap('c');
+    robot.keyToggle('alt', 'up');
+
+    // 编辑数据
+    console.log('模拟 编辑数据 更新数据缓存...');
+    await sleep(1000);
+    robot.keyTap('e');
+
+    // 关闭数据文档
+    console.log('模拟 Alt+F4 关闭数据文档...');
+    await sleep(1000);
+    // 组合键模拟 Alt+F4
+    robot.keyToggle('alt', 'down');
+    robot.keyTap('f4');
+    robot.keyToggle('alt', 'up');
+
+    //循环结束
+
+    // 7. 保存并关闭文档
+    console.log('模拟 Ctrl+S 保存修改...');
+    await sleep(1000);
+    robot.keyToggle('control', 'down');
+    robot.keyTap('s');
+    robot.keyToggle('control', 'up');
+
+    console.log('模拟 Alt+F4 关闭文档...');
+    await sleep(1000);
+    robot.keyToggle('alt', 'down');
+    robot.keyTap('f4');
+    robot.keyToggle('alt', 'up');
+
+    console.log('图表数据更新完成');
+}
+
+/**
  * 重新打包DOCX文件（优先使用内存中的替换后XML内容，原模板文件不修改）
  * @param {string} tempDir 临时解压目录（原模板）
  * @param {string} outputPath 输出文件路径
@@ -424,9 +497,9 @@ function createDefaultJsonTemplate() {
 
 module.exports = {
     name: 'docxBatch',
-    version: '1.3.0',
+    version: '1.2.0',
     process: writingRules,
-    description: '主要用于批量生成docx文件-通过模拟打开关闭自动触发ooxml修正',
+    description: '主要用于批量生成docx文件-提取通用文档循环逻辑',
     notes: {
         node: '18.20.4',
     },
