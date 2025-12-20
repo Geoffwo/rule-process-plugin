@@ -1,6 +1,7 @@
 const AdmZip = require('adm-zip');
 const { execSync  } = require('child_process');
 const robot = require('robotjs');
+const xlsx = require('xlsx');
 const path = require('path');
 const fs = require('fs-extra');
 
@@ -8,11 +9,11 @@ async function writingRules(inputArray, outputNodeTemplate) {
     // 过滤出docx文件
     const docxFile = inputArray.find(item => item.normExt === 'docx' && item.name === 'template');
     const jsonFiles = inputArray.filter(item => item.normExt === 'json');//动态数据
-    const zipTempDir = inputArray.find(item => item.name === 'zipTemp' && item.isDirectory === true);
+    const batchFiles = inputArray.filter(item => item.normExt === 'docx');
     const outputPath = outputNodeTemplate.path;
-    const templatePath = path.join(outputPath, '../inputDir/template.docx');
     const inputPath = path.join(outputPath, '../inputDir');
-    const tempPath = path.join(outputPath, '../inputDir/zipTemp');
+    const templatePath = path.join(inputPath, './template.docx');
+
 
     if (!docxFile) {
         console.log('未找到 template.docx，正在生成默认模板...');
@@ -29,16 +30,24 @@ async function writingRules(inputArray, outputNodeTemplate) {
         ];
     }
 
-    if (!zipTempDir) {
-        console.log('未找到docx模板解压文件...');
-        await unzipDocx(docxFile, tempPath);
+    // 核心判断：检查所有 batchFile 是否都能在 inputArray 找到对应的同名目录
+    const allDirExist = batchFiles.every(batchFile => {
+        return inputArray.some(item => item.name === batchFile.name && item.isDirectory === true );
+    });
+
+    if (!allDirExist) {
+        console.log('批量处理docx文件解压...');
+        for (const batchFile of batchFiles) {
+            const tempPath = path.join(inputPath, batchFile.name);
+            await unzipDocx(batchFile, tempPath);
+        }
         // 解压后重新过滤inputArray（模拟新增解压文件），实际场景需根据业务补充
-        return [{ ...outputNodeTemplate, content: '错误: 未找到docx模板解压文件,已创建解压文件' }];
+        return [{ ...outputNodeTemplate, content: '错误: 未找到docx解压文件,已创建解压文件' }];
     }
 
     const contents = [];
     // 传递tempPath和replaceData
-    await generateReport(outputPath, jsonFiles, tempPath, inputArray, contents);
+    await generateReport(inputPath, jsonFiles, batchFiles, inputArray, contents);
 
     console.log('\n 所有报告生成完成！');
 
@@ -72,36 +81,141 @@ async function unzipDocx(docxFile, tempPath) {
  * 生成Word文档（支持嵌套循环，不修改模板格式）
  * @param {string} outputPath - 输出目录
  * @param {object} jsonFiles - 所有数据
- * @param {string} tempDir - 解压临时目录
+ * @param batchFiles - 所有docx文件
  * @param {array} inputArray - 文件元信息数组
  * @param {array} contents - 结果收集数组
  */
-async function generateReport(outputPath, jsonFiles, tempDir, inputArray, contents) {
+async function generateReport(outputPath, jsonFiles, batchFiles, inputArray, contents) {
     try {
-        // 获取特定数据
-        const replaceData = processData(jsonFiles);
-        const options = {
-            tempDir,
-            outputPath,
-            replaceData,
-            inputArray
-        };
-        // 收集替换后的XML内容（内存缓存，不修改原模板）
-        const replacedXmlContents = await generateSingleReport(options);
+        for (const batchFile of batchFiles) {
+            const tempDir = path.join(batchFile.dir,batchFile.name)
+            // 获取特定数据
+            const replaceData = processData(jsonFiles);
+            const options = {
+                tempDir,
+                outputPath,
+                replaceData,
+                inputArray
+            };
+            // 收集替换后的XML内容（内存缓存，不修改原模板）
+            const replacedXmlContents = await generateSingleReport(options);
+            // 修改图表数据 （内存缓存，不修改原模板）
+            const chartData = replaceData['chart']
+            const replacedExcelContents = await generateEmbeddedExcel(tempDir, chartData,inputArray);
 
-        // 重新打包DOCX（使用内存中的替换后内容，原模板文件不变）
-        const outputFile = path.join(outputPath, `调研报告_${new Date().getTime()}.docx`);
-        await repackDocx(tempDir, outputFile, replacedXmlContents);
+            // 3. 合并XML和Excel的内存内容（Excel覆盖同名key，优先级更高）
+            const allReplacedContents = {
+                ...replacedXmlContents,
+                ...replacedExcelContents // Excel路径和XML路径不会冲突，放心合并
+            };
 
-        console.log(`正在触发OOXML规则自动修正：${outputFile}`);
-        await updateOOXML(outputFile)
+            // 重新打包DOCX（使用内存中的替换后内容，原模板文件不变）
+            const outputFile = path.join(outputPath, `调研报告_${new Date().getTime()}.docx`);
+            await repackDocx(tempDir, outputFile,inputArray, allReplacedContents);
 
-        contents.push({ outputPath: outputFile, success: true });
-        console.log(`文档生成成功：${outputFile}`);
+            console.log(`正在触发OOXML规则自动修正：${outputFile}`);
+            await updateOOXML(outputFile)
+
+            contents.push({ outputPath: outputFile, success: true });
+            console.log(`文档生成成功：${outputFile}`);
+        }
     } catch (err) {
         contents.push({ outputPath: '', success: false, error: err.message });
         console.error('生成失败：', err.message);
     }
+}
+
+/**
+ * 【内存版】处理嵌入Excel数据替换（不修改物理文件，仅存入内存映射表）
+ * @param {string} tempDir DOCX解压临时目录
+ * @param {object} jsonData 图表数据（格式：{ 筛选key: 数据数组 }）
+ * @param inputArray
+ * @returns {object} 替换后的Excel内容映射 { 相对路径: Excel二进制Buffer }
+ */
+async function generateEmbeddedExcel(tempDir, jsonData,inputArray) {
+    // 用于存储内存中的Excel内容（最终合并到replacedXmlContents）
+    const replacedExcelContents = {};
+
+    try {
+        // 1. 定义嵌入Excel的根目录
+        const embeddedExcelDir = path.join(tempDir, 'word', 'embeddings');
+
+        // 2. 读取目录下所有xlsx文件
+        const targetFiles = inputArray.filter(item=>item.path.startsWith(embeddedExcelDir) && item.isDirectory === false);
+        if (targetFiles.length === 0) {
+            console.log(`${embeddedExcelDir} 目录下未找到XLSX文件，跳过Excel替换`);
+            return replacedExcelContents;
+        }
+
+        const map={}
+        // 3. 遍历每个XLSX文件，仅在内存中处理
+        for (const file of targetFiles) {
+            const excelPhysicalPath = file.path;
+            console.log('excelPhysicalPath',excelPhysicalPath);
+            // 计算相对于tempDir的路径（和XML保持一致的key格式）
+            const excelRelativePath = path.relative(tempDir, excelPhysicalPath).replace(/\\/g, '/');
+            console.log(`开始处理嵌入Excel文件（内存）：${excelRelativePath}`);
+
+            // 3.1 读取物理Excel文件到内存
+            const workbook = xlsx.readFile(excelPhysicalPath);
+
+            // 3.2 获取第一个工作表
+            if (workbook.SheetNames.length === 0) {
+                console.warn(`${excelRelativePath} 无工作表，跳过`);
+                continue;
+            }
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+
+            // 3.3 提取第一列标题作为筛选key
+            const filterKey = getFirstColumnTitle(sheet);
+            if (!filterKey) {
+                console.warn(` ${excelRelativePath} 第一列标题为空，跳过`);
+                continue;
+            }
+            console.log(`提取筛选标识：${filterKey}`);
+
+            if(map[filterKey] === undefined){
+                map[filterKey] = 0
+            }else{
+                map[filterKey] = map[filterKey] + 1
+            }
+
+            // 3.4 匹配JSON数据
+            const targetData = jsonData[filterKey];
+            if (!targetData || !Array.isArray(targetData)) {
+                console.warn(`未找到 ${filterKey} 对应的数据，跳过`);
+                continue;
+            }
+
+            // 3.5 内存中替换工作表数据（保留样式）
+            const data = targetData[map[filterKey]]
+            workbook.Sheets[sheetName] = xlsx.utils.json_to_sheet(data);
+
+            // 3.6 将修改后的Excel写入内存Buffer（不落地到物理文件）
+            const excelBuffer = xlsx.write(workbook, {
+                type: 'buffer',
+                bookType: 'xlsx',
+                compression: true // 压缩，和原DOCX格式一致
+            });
+
+            // 3.7 存入内存映射表
+            replacedExcelContents[excelRelativePath] = excelBuffer;
+            console.log(` ${excelRelativePath} 已存入内存，大小：${(excelBuffer.length/1024).toFixed(2)}KB`);
+        }
+
+        return replacedExcelContents;
+    } catch (err) {
+        throw new Error(`内存处理嵌入Excel失败：${err.message}`);
+    }
+}
+
+// 保留原辅助函数（无需修改）
+function getFirstColumnTitle(sheet) {
+    const a1Cell = sheet['A1'];
+    if (!a1Cell || !a1Cell.v) return null;
+    const title = String(a1Cell.v).trim();
+    return title || null;
 }
 
 /**
@@ -114,6 +228,7 @@ function sleep(ms) {
 
 /**
  * 修复OOXML格式（异步封装+容错+动态延迟）
+ * 也可以用libreOffice无界面处理，但是libreOffice和wps格式存在不兼容
  * @param {string} outputFile - 文档路径
  * @returns {Promise<void>} 确保异步流程可等待
  */
@@ -229,7 +344,7 @@ async function updateChartData(outputFile){
  * @param {string} outputPath 输出文件路径
  * @param {object} replacedXmlContents 替换后的XML内容映射 { 文件相对路径: 新内容 }
  */
-async function repackDocx(tempDir, outputPath, replacedXmlContents = {}) {
+async function repackDocx2(tempDir, outputPath, replacedXmlContents = {}) {
     try {
         const newZip = new AdmZip();
         const files = await fs.readdir(tempDir, { withFileTypes: true, recursive: true });
@@ -246,6 +361,36 @@ async function repackDocx(tempDir, outputPath, replacedXmlContents = {}) {
                     console.log(`使用替换后的内容打包：${zipRelativePath}`);
                 } else {
                     fileContent = await fs.readFile(filePath);
+                }
+                newZip.addFile(zipRelativePath, fileContent);
+            }
+        }
+
+        // 写入ZIP文件
+        newZip.writeZip(outputPath);
+        console.log(`DOCX生成成功：${outputPath}`);
+    } catch (err) {
+        throw new Error(`重新打包DOCX失败：${err.message}`);
+    }
+}
+
+async function repackDocx(tempDir, outputPath,inputArray, replacedXmlContents = {}) {
+    try {
+        const newZip = new AdmZip();
+        const files = inputArray.filter(item=>item.path.startsWith(tempDir));
+        for (const file of files) {
+            if (!file.isDirectory) {
+                const filePath = file.path;
+                // 计算相对于tempDir的路径（保证ZIP内路径正确）
+                const zipRelativePath = path.relative(tempDir, filePath).replace(/\\/g, '/');
+                let fileContent;
+
+                // 优先使用内存中替换后的内容，否则读取原模板文件
+                if (replacedXmlContents[zipRelativePath]) {
+                    fileContent = Buffer.from(replacedXmlContents[zipRelativePath], 'utf8');
+                    console.log(`使用替换后的内容打包：${zipRelativePath}`);
+                } else {
+                    fileContent = file.content;
                 }
                 newZip.addFile(zipRelativePath, fileContent);
             }
@@ -283,6 +428,7 @@ async function generateSingleReport(options = {}) {
     ];
     const xmlFiles = inputArray.filter(item => {
         if (item.isDirectory) return false;
+        //path.relative(from, to) 计算并返回从 from 路径到 to 路径的「相对路径字符串」。
         const relativePath = path.relative(tempDir, item.path).replace(/\\/g, '/');
         return xmlFilePatterns.some(pattern =>
             relativePath.startsWith(pattern) && relativePath.endsWith('.xml')
@@ -497,7 +643,7 @@ function createDefaultJsonTemplate() {
 
 module.exports = {
     name: 'docxBatch',
-    version: '1.3.0',
+    version: '1.3.2',
     process: writingRules,
     description: '主要用于批量生成docx文件-提取通用文档循环逻辑',
     notes: {
