@@ -99,9 +99,7 @@ async function generateReport(outputPath, jsonFiles, batchFiles, inputArray, con
             };
             // 收集替换后的XML内容（内存缓存，不修改原模板）
             const replacedXmlContents = await generateSingleReport(options);
-            // 修改图表数据 （内存缓存，不修改原模板）
-            const chartData = replaceData['chart']
-            const replacedExcelContents = await generateEmbeddedExcel(tempDir, chartData,inputArray);
+            const replacedExcelContents = await generateEmbeddedExcel(options);
 
             // 3. 合并XML和Excel的内存内容（Excel覆盖同名key，优先级更高）
             const allReplacedContents = {
@@ -114,7 +112,8 @@ async function generateReport(outputPath, jsonFiles, batchFiles, inputArray, con
             await repackDocx(tempDir, outputFile,inputArray, allReplacedContents);
 
             console.log(`正在触发OOXML规则自动修正：${outputFile}`);
-            await updateOOXML(outputFile)
+            // await updateOOXML(outputFile)
+            await updateChartData(outputFile,options)
 
             contents.push({ outputPath: outputFile, success: true });
             console.log(`文档生成成功：${outputFile}`);
@@ -127,12 +126,15 @@ async function generateReport(outputPath, jsonFiles, batchFiles, inputArray, con
 
 /**
  * 【内存版】处理嵌入Excel数据替换（不修改物理文件，仅存入内存映射表）
- * @param {string} tempDir DOCX解压临时目录
- * @param {object} jsonData 图表数据（格式：{ 筛选key: 数据数组 }）
- * @param inputArray
  * @returns {object} 替换后的Excel内容映射 { 相对路径: Excel二进制Buffer }
+ * @param options
  */
-async function generateEmbeddedExcel(tempDir, jsonData,inputArray) {
+async function generateEmbeddedExcel(options) {
+    const { tempDir, replaceData, inputArray } = options;
+    if (!tempDir || !replaceData || !inputArray) {
+        throw new Error('generateEmbeddedExcel缺少必要参数：tempDir/replaceData/inputArray');
+    }
+
     // 用于存储内存中的Excel内容（最终合并到replacedXmlContents）
     const replacedExcelContents = {};
 
@@ -151,7 +153,6 @@ async function generateEmbeddedExcel(tempDir, jsonData,inputArray) {
         // 3. 遍历每个XLSX文件，仅在内存中处理
         for (const file of targetFiles) {
             const excelPhysicalPath = file.path;
-            console.log('excelPhysicalPath',excelPhysicalPath);
             // 计算相对于tempDir的路径（和XML保持一致的key格式）
             const excelRelativePath = path.relative(tempDir, excelPhysicalPath).replace(/\\/g, '/');
             console.log(`开始处理嵌入Excel文件（内存）：${excelRelativePath}`);
@@ -182,7 +183,9 @@ async function generateEmbeddedExcel(tempDir, jsonData,inputArray) {
             }
 
             // 3.4 匹配JSON数据
-            const targetData = jsonData[filterKey];
+            // 修改图表数据 （内存缓存，不修改原模板）
+            const chartData = replaceData['chart']
+            const targetData = chartData[filterKey];
             if (!targetData || !Array.isArray(targetData)) {
                 console.warn(`未找到 ${filterKey} 对应的数据，跳过`);
                 continue;
@@ -268,9 +271,17 @@ async function updateOOXML(outputFile){
 /**
  * 修复OOXML格式（异步封装+容错+动态延迟）
  * @param {string} outputFile - 文档路径
+ * @param options
  * @returns {Promise<void>} 确保异步流程可等待
  */
-async function updateChartData(outputFile){
+async function updateChartData(outputFile,options){
+    const { tempDir, inputArray } = options;
+    // 1. 定义嵌入Excel的根目录
+    const embeddedExcelDir = path.join(tempDir, 'word', 'embeddings');
+
+    // 2. 读取目录下所有xlsx文件
+    const targetFiles = inputArray.filter(item=>item.path.startsWith(embeddedExcelDir) && item.isDirectory === false);
+
     // 1. 同步执行打开文档命令（阻塞直到命令执行完成）
     // 注意：start命令本身是异步打开程序，execSync仅等待命令发送完成，而非程序加载完成
     execSync(`start "" "${outputFile}"`, {
@@ -278,8 +289,16 @@ async function updateChartData(outputFile){
     });
 
     await sleep(7500);
+    // 2. 模拟输入空格 → 清除空格（触发文档修改）
+    console.log('执行输入/清除空格操作...');
+    robot.keyTap('space'); // 输入空格
+
+    await sleep(1000);
+    robot.keyTap('backspace'); // 清除空格
+
     //2. 开始 选型卡（Alt+H）
     console.log('模拟 Alt+H 选择 开始 选项卡...');
+    await sleep(1000);
     // 组合键模拟 Alt+H
     robot.keyToggle('alt', 'down');
     robot.keyTap('h');
@@ -291,35 +310,36 @@ async function updateChartData(outputFile){
     robot.keyTap('s');
     robot.keyTap('l');
 
-    await sleep(300);
+    await sleep(1000);
     robot.keyTap('o');
 
     //从这里开始循环 循环次数有chart.xml/xlsx数量决定
-    await sleep(300);
-    robot.keyTap('tab');
+    for (let targetFile of targetFiles) {
+        await sleep(1000);
+        robot.keyTap('tab');
 
-    //2. 图表工具 选型卡（Alt+JC）
-    console.log('模拟 Alt+JC 选择 图表工具 选项卡...');
-    await sleep(1000);
-    // 组合键模拟 Alt+JC
-    robot.keyToggle('alt', 'down');
-    robot.keyTap('j');
-    robot.keyTap('c');
-    robot.keyToggle('alt', 'up');
+        //2. 图表工具 选型卡（Alt+JC）
+        console.log('模拟 Alt+JC 选择 图表工具 选项卡...');
+        await sleep(1000);
+        // 组合键模拟 Alt+JC
+        robot.keyToggle('alt', 'down');
+        robot.keyTap('j');
+        robot.keyTap('c');
+        robot.keyToggle('alt', 'up');
 
-    // 编辑数据
-    console.log('模拟 编辑数据 更新数据缓存...');
-    await sleep(1000);
-    robot.keyTap('e');
+        // 编辑数据
+        console.log('模拟 编辑数据 更新数据缓存...');
+        await sleep(1000);
+        robot.keyTap('e');
 
-    // 关闭数据文档
-    console.log('模拟 Alt+F4 关闭数据文档...');
-    await sleep(1000);
-    // 组合键模拟 Alt+F4
-    robot.keyToggle('alt', 'down');
-    robot.keyTap('f4');
-    robot.keyToggle('alt', 'up');
-
+        // 关闭数据文档
+        console.log('模拟 Alt+F4 关闭数据文档...');
+        await sleep(1000);
+        // 组合键模拟 Alt+F4
+        robot.keyToggle('alt', 'down');
+        robot.keyTap('f4');
+        robot.keyToggle('alt', 'up');
+    }
     //循环结束
 
     // 7. 保存并关闭文档
@@ -637,7 +657,16 @@ function createDefaultJsonTemplate() {
         categories: [
             { categoryName: '冰箱', products: [{ productName: '十字门冰箱' },{ productName: '老式冰箱' }] },
             { categoryName: '空调', products: [{ productName: '一级能效空调' }] }
-        ]
+        ],
+        chart:{
+            chart0:[
+                [{"chart0": "类型1","系列": 33},{"chart0": "类型2","系列": 22},{"chart0": "类型3","系列": 44},{"chart0": "类型3","系列": 11}]
+            ],
+            chart1:[
+                [{"chart1": "风格1","格式": 12},{"chart1": "风格2","格式": 10},{"chart1": "风格3","格式": 11},{"chart1": "风格3","格式": 8}],
+                [{"chart1": "特色1","命题": 14},{"chart1": "特色2","命题": 18},{"chart1": "特色3","命题": 17},{"chart1": "特色3","命题": 20}]
+            ]
+        }
     };
 }
 
@@ -645,7 +674,7 @@ module.exports = {
     name: 'docxBatch',
     version: '1.3.2',
     process: writingRules,
-    description: '主要用于批量生成docx文件-提取通用文档循环逻辑',
+    description: '主要用于批量生成docx文件-提取通用文档循环逻辑-当前图表逻辑以完善（需要手动将wps全屏后，触发robotjs指令）',
     notes: {
         node: '18.20.4',
     },
