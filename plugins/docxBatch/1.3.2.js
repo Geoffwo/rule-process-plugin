@@ -112,7 +112,6 @@ async function generateReport(outputPath, jsonFiles, batchFiles, inputArray, con
             await repackDocx(tempDir, outputFile,inputArray, allReplacedContents);
 
             console.log(`正在触发OOXML规则自动修正：${outputFile}`);
-            // await updateOOXML(outputFile)
             await updateChartData(outputFile,options)
 
             contents.push({ outputPath: outputFile, success: true });
@@ -240,45 +239,6 @@ function sleep(ms) {
 
 /**
  * 修复OOXML格式（异步封装+容错+动态延迟）
- * 也可以用libreOffice无界面处理，但是libreOffice和wps格式存在不兼容
- * @param {string} outputFile - 文档路径
- * @returns {Promise<void>} 确保异步流程可等待
- */
-async function updateOOXML(outputFile){
-    // 1. 同步执行打开文档命令（阻塞直到命令执行完成）
-    // 注意：start命令本身是异步打开程序，execSync仅等待命令发送完成，而非程序加载完成
-    execSync(`start "" "${outputFile}"`, {
-        stdio: 'ignore' // 忽略命令输出，避免控制台打印无关信息
-    });
-
-    await sleep(7000);
-    // 2. 模拟输入空格 → 清除空格（触发文档修改）
-    console.log('执行输入/清除空格操作...');
-    robot.keyTap('space'); // 输入空格
-
-    await sleep(1000);
-    robot.keyTap('backspace'); // 清除空格
-
-
-    // 主动保存（Ctrl+S）→ 关闭（Alt+F4）
-    await sleep(1000);
-    console.log('模拟 Ctrl+S 保存文档...');
-    // 组合键模拟 Ctrl+S
-    robot.keyToggle('control', 'down');
-    robot.keyTap('s');
-    robot.keyToggle('control', 'up');
-
-    await sleep(1000);
-    console.log('模拟 Alt+F4 关闭文档...');
-    // 组合键模拟 Alt+F4
-    robot.keyToggle('alt', 'down');
-    robot.keyTap('f4');
-    robot.keyToggle('alt', 'up');
-    console.log('操作完成');
-}
-
-/**
- * 修复OOXML格式（异步封装+容错+动态延迟）
  * @param {string} outputFile - 文档路径
  * @param options
  * @returns {Promise<void>} 确保异步流程可等待
@@ -365,42 +325,6 @@ async function updateChartData(outputFile,options){
     robot.keyToggle('alt', 'up');
 
     console.log('图表数据更新完成');
-}
-
-/**
- * 重新打包DOCX文件（优先使用内存中的替换后XML内容，原模板文件不修改）
- * @param {string} tempDir 临时解压目录（原模板）
- * @param {string} outputPath 输出文件路径
- * @param {object} replacedXmlContents 替换后的XML内容映射 { 文件相对路径: 新内容 }
- */
-async function repackDocx2(tempDir, outputPath, replacedXmlContents = {}) {
-    try {
-        const newZip = new AdmZip();
-        const files = await fs.readdir(tempDir, { withFileTypes: true, recursive: true });
-        for (const file of files) {
-            if (file.isFile()) {
-                const filePath = path.join(file.path, file.name);
-                // 计算相对于tempDir的路径（保证ZIP内路径正确）
-                const zipRelativePath = path.relative(tempDir, filePath).replace(/\\/g, '/');
-                let fileContent;
-
-                // 优先使用内存中替换后的内容，否则读取原模板文件
-                if (replacedXmlContents[zipRelativePath]) {
-                    fileContent = Buffer.from(replacedXmlContents[zipRelativePath], 'utf8');
-                    console.log(`使用替换后的内容打包：${zipRelativePath}`);
-                } else {
-                    fileContent = await fs.readFile(filePath);
-                }
-                newZip.addFile(zipRelativePath, fileContent);
-            }
-        }
-
-        // 写入ZIP文件
-        newZip.writeZip(outputPath);
-        console.log(`DOCX生成成功：${outputPath}`);
-    } catch (err) {
-        throw new Error(`重新打包DOCX失败：${err.message}`);
-    }
 }
 
 async function repackDocx(tempDir, outputPath,inputArray, replacedXmlContents = {}) {
