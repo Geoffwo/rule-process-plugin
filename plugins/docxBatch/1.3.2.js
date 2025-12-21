@@ -274,7 +274,7 @@ async function updateChartData(outputFile,options){
     robot.keyToggle('alt', 'up');
 
     await sleep(1000);
-    console.log('模拟 选择第一个图表...');
+    console.log('模拟 选择对象功能...');
     // 选择（SL）→ 选择对象（O）->选择第一个图表（tab）
     robot.keyTap('s');
     robot.keyTap('l');
