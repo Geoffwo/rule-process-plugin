@@ -149,6 +149,15 @@ async function generateEmbeddedExcel(options) {
             return replacedExcelContents;
         }
 
+        // 排序核心逻辑：提取数字并比较
+        targetFiles.sort((a, b) => {
+            // 正则提取 "Workbook" 后的数字（容错：无数字则返回0）
+            const numA = a.name.match(/Workbook(\d+)/) ? parseInt(RegExp.$1, 10) : 0;
+            const numB = b.name.match(/Workbook(\d+)/) ? parseInt(RegExp.$1, 10) : 0;
+            // 升序排序（numA - numB），降序则反过来
+            return numA - numB;
+        });
+
         const map={}
         // 3. 遍历每个XLSX文件，仅在内存中处理
         for (const file of targetFiles) {
@@ -242,7 +251,7 @@ async function updateOOXML(outputFile){
         stdio: 'ignore' // 忽略命令输出，避免控制台打印无关信息
     });
 
-    await sleep(7500);
+    await sleep(7000);
     // 2. 模拟输入空格 → 清除空格（触发文档修改）
     console.log('执行输入/清除空格操作...');
     robot.keyTap('space'); // 输入空格
@@ -288,7 +297,7 @@ async function updateChartData(outputFile,options){
         stdio: 'ignore' // 忽略命令输出，避免控制台打印无关信息
     });
 
-    await sleep(7500);
+    await sleep(7000);
     // 2. 模拟输入空格 → 清除空格（触发文档修改）
     console.log('执行输入/清除空格操作...');
     robot.keyTap('space'); // 输入空格
