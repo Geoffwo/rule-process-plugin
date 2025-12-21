@@ -689,7 +689,7 @@ module.exports = {
     },
     input: {
         normExt: 'template.docx文件',
-        format: '${{变量名}}'
+        format: '${{变量名}}/图表需要在xlsx的第一行第一列增加chart的key标记，参考数据json'
     },
     output: {
         normExt: '[1-12]月.docx',
