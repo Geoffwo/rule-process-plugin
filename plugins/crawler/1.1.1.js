@@ -65,15 +65,6 @@ async function* writingRules(inputArray, outputNodeTemplate) {
     await browser.close(); // 确保浏览器关闭[1](@ref)
     console.log('浏览器已关闭');
   }
-
-  const outputNode = {
-    ...outputNodeTemplate,
-    fileName: 'douban_top250_result',
-    normExt: 'json',
-    content: JSON.stringify(allMovies, null, 2)
-  };
-
-  return [outputNode];
 }
 
 /**
@@ -93,7 +84,7 @@ function getUniqueFileName() {
 
 module.exports = {
   name: 'crawler',
-  version: '1.0.1',
+  version: '1.1.1',
   process: writingRules,
   disable: true,
   description: '获取豆瓣电影Top250榜单数据，包括电影名称、评分、短评、详情链接和海报地址(使用迭代生成器逐步生成，减少内存)', // 准确描述功能

@@ -70,7 +70,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
 
 module.exports = {
   name: 'crawler',
-  version: '1.0.1',
+  version: '1.1.0',
   process: writingRules,
   disable: true,
   description: '获取豆瓣电影Top250榜单数据，包括电影名称、评分、短评、详情链接和海报地址', // 准确描述功能
