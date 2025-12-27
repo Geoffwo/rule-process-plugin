@@ -83,6 +83,14 @@
       }
     }
   },
+  "docxMerged": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/docxMerged/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/docxMerged/1.0.0.js"
+      }
+    }
+  },
   "download2img": {
     "versions": {
       "1.0.0": {
@@ -152,6 +160,14 @@
       "1.0.0": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/signature/1.0.0.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/signature/1.0.0.js"
+      }
+    }
+  },
+  "sql2format": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/sql2format/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/sql2format/1.0.0.js"
       }
     }
   },
