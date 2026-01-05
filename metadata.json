@@ -25,9 +25,17 @@
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/crawler/1.0.0.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/crawler/1.0.0.js"
       },
+      "1.0.1": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/crawler/1.0.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/crawler/1.0.1.js"
+      },
       "1.1.0": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/crawler/1.1.0.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/crawler/1.1.0.js"
+      },
+      "1.1.1": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/crawler/1.1.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/crawler/1.1.1.js"
       }
     }
   },
@@ -96,6 +104,10 @@
       "1.0.0": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/download2img/1.0.0.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/download2img/1.0.0.js"
+      },
+      "1.0.1": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/download2img/1.0.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/download2img/1.0.1.js"
       }
     }
   },
@@ -144,6 +156,14 @@
       "1.0.0": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/img2format/1.0.0.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/img2format/1.0.0.js"
+      }
+    }
+  },
+  "imgClassify": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/imgClassify/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/imgClassify/1.0.0.js"
       }
     }
   },

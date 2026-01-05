@@ -1,7 +1,7 @@
 const { chromium } = require('playwright'); // 引入Playwright的Chromium模块[1,3](@ref)
 
 // 主处理函数
-async function writingRules(inputArray, outputNodeTemplate) {
+async function* writingRules(inputArray, outputNodeTemplate) {
   const browser = await chromium.launch({ headless: true }); // 启动无头Chromium浏览器(无UI)[3](@ref)
   const page = await browser.newPage(); // 创建新页面实例[4](@ref)
   const allMovies = []; // 存储所有电影数据的数组
@@ -16,7 +16,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
     // 2. 分页抓取逻辑
     let pageCount = 1;
     while (pageCount <= 10) { // 豆瓣Top250共10页
-      console.log(`⏳ 正在抓取第 ${pageCount} 页...`);
+      console.log(`正在抓取第 ${pageCount} 页...`);
 
       // 等待电影列表渲染
       await page.waitForSelector('.grid_view', {
@@ -34,7 +34,17 @@ async function writingRules(inputArray, outputNodeTemplate) {
             imgUrl: item.querySelector('.pic img')?.getAttribute('src')|| '暂无', // 新增电影海报
           }))
       );
-      allMovies.push(...pageMovies); // 合并当前页数据到总数组
+
+      // 构造当前页的outputNode（改为追加模式：仅包含当前页数据，方便后续追加写入文件）
+      const outputNode = {
+        ...outputNodeTemplate,
+        fileName: getUniqueFileName(),
+        normExt: 'json',
+        content: JSON.stringify(pageMovies, null, 2), // 仅序列化当前页数据，而非所有数据
+      };
+
+      // 按页面导出：产出当前页的outputNode数组（保持原有返回格式一致）
+      yield [outputNode];
 
       // 3. 翻页处理
       const nextButton = await page.$('.next a'); // 定位"下一页"按钮[4](@ref)
@@ -55,25 +65,29 @@ async function writingRules(inputArray, outputNodeTemplate) {
     await browser.close(); // 确保浏览器关闭[1](@ref)
     console.log('浏览器已关闭');
   }
+}
 
-  const outputNode = {
-    ...outputNodeTemplate,
-    fileName: 'douban_top250_result',
-    normExt: 'json',
-    content: JSON.stringify(allMovies, null, 2)
-  };
-
-  return [outputNode];
+/**
+ * 生成一个不会重复的文件名
+ * @returns {string}
+ */
+function getUniqueFileName() {
+  const prefix = 'result'
+  const now = new Date();
+  const pad = n => n.toString().padStart(2, '0');
+  const dateStr = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const randomStr = Math.random().toString(36).slice(2, 6); // 6位随机字符串
+  return `${prefix}_${dateStr}_${randomStr}`;
 }
 
 // module.exports = writingRules;
 
 module.exports = {
   name: 'crawler',
-  version: '1.1.0',
+  version: '1.1.1',
   process: writingRules,
   disable: true,
-  description: '获取豆瓣电影Top250榜单数据，包括电影名称、评分、短评、详情链接和海报地址', // 准确描述功能
+  description: '获取豆瓣电影Top250榜单数据，包括电影名称、评分、短评、详情链接和海报地址(使用迭代生成器逐步生成，减少内存)', // 准确描述功能
   notes: {
     node: '18.20.4', // 明确支持的Node版本
   },
