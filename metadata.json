@@ -183,6 +183,14 @@
       }
     }
   },
+  "opencv": {
+    "versions": {
+      "0.1.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.1.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.1.0.js"
+      }
+    }
+  },
   "signature": {
     "versions": {
       "1.0.0": {
