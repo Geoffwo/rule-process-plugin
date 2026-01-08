@@ -87,7 +87,7 @@ module.exports = {
     name: 'opencv',
     version: '0.6.0',
     process: writingRules,
-    description: 'opencv基础：颜色空间转换',
+    description: 'opencv基础：灰度图（BGR三通道转换为1通道，公式，转换不可逆）',
     notes: {
         node: '18.20.4',
         msg:'0.x.x代表学习分支，实际插件价值偏低',
