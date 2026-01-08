@@ -1,10 +1,11 @@
 const cv = require('@u4/opencv4nodejs');
+const path = require("path");
 
 /**
  * 图片信息提取处理函数
  * 读取输入的PNG/图片文件，使用OpenCV提取图片的基本信息（宽度、高度、通道数等）
  */
- async function writingRules(inputArray, outputNodeTemplate) {
+async function writingRules(inputArray, outputNodeTemplate) {
     // 检查文件是否存在
     const pngFiles = inputArray.filter(file => file.normExt === 'png');
 
@@ -34,6 +35,38 @@ const cv = require('@u4/opencv4nodejs');
             console.log(`高度：${height}px`);
             console.log(`通道数：${channels}（${channels === 3 ? '彩色图（BGR）' : '灰度图'}）`);
 
+            // 3. 加深红色分量（仅处理彩色图，灰度图无通道区分）
+            if (channels === 3) {
+                // 3. 分离BGR通道（严格匹配官方splitChannels API）
+                const [matB, matG, matR] = img.splitChannels();
+
+                // const matR_Ratio = matR;// 红色增强系数
+                // 步骤3：逐像素处理（核心：只用at/set，绝对支持）
+                // for (let y = 0; y < height; y++) {
+                //     for (let x = 0; x < width; x++) {
+                //         // 读取浮点型红色值（at是最基础的像素读取方法）
+                //         let rVal = matR.at(y, x);
+                //         // 用JS原生Math做增强+截断
+                //         rVal = rVal * 5; // 增强
+                //         rVal = Math.min(Math.max(rVal, 0), 255); // 截断0-255
+                //         // 写回8位通道（set是最基础的像素设置方法）
+                //         matR_Ratio.set(y, x, rVal);
+                //     }
+                // }
+
+                const matR_Ratio = matR.mul(1.5);// 红色增强系数
+
+                // 5. 合并通道
+                const enhancedImg = new cv.Mat([matB, matG, matR_Ratio]);
+
+                // 6. 保存处理后的图片（官方imwriteAsync）
+                const outputPath = path.join(outputNodeTemplate.path, 'opencv04.png')
+                await cv.imwriteAsync(outputPath, enhancedImg);
+                console.log(`红色加深后的图片已保存：${outputPath}`);
+            } else {
+                console.log(`文件${pngFile.path}是灰度图，无需处理红色通道`);
+            }
+
             content.push({
                 filePath: pngFile.path,
                 success:true,
@@ -53,14 +86,14 @@ const cv = require('@u4/opencv4nodejs');
         }
     }
 
-    return [{...outputNodeTemplate,fileName: 'opencv01',normExt: 'json',content:JSON.stringify(content, null, 2)}];
+    return [{...outputNodeTemplate,fileName: 'opencv04',normExt: 'json',content:JSON.stringify(content, null, 2)}];
 }
 
 module.exports = {
     name: 'opencv',
-    version: '0.1.0',
+    version: '0.4.0',
     process: writingRules,
-    description: 'opencv基础：图片信息提取工具-读取图片文件并提取宽度、高度、通道数等基本信息',
+    description: 'opencv基础：强化图片红色区域',
     notes: {
         node: '18.20.4',
         msg:'0.x.x代表学习分支，实际插件价值偏低',
