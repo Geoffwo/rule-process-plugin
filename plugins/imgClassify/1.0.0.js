@@ -178,7 +178,7 @@ async function preprocessImage(imagePath) {
         .resize(256, 256, { fit: 'cover', position: 'center' }) // 缩放至 256x256，保持比例，居中裁剪
         .extract({ left: 16, top: 16, width: 224, height: 224 }) // 从 (16,16) 开始裁剪 224x224（即中心区域）
         .raw() // 输出原始像素数据（不编码为 JPEG/PNG，而是纯 Buffer）
-        .toBuffer(); // 转为 Node.js Buffer 对象
+        .toBuffer(); //转为纯字节流 Buffer，存储规则是：按「像素」存储 → 先存完一个像素的 R、G、B，再存下一个像素，一行存完存下一行
 
     // ImageNet 数据集训练时使用的 RGB 通道均值和标准差（固定值）
     const mean = [0.485, 0.456, 0.406]; // R, G, B 各通道均值
@@ -187,11 +187,16 @@ async function preprocessImage(imagePath) {
     // 创建目标张量：CHW 格式，共 3×224×224 = 150,528 个浮点数
     const input = new Float32Array(3 * 224 * 224);
 
+    // HWC 格式：H = Height (行)、W = Width (列)、C = Channel (通道，R/G/B)
+    // 核心特点：一个像素的 3 个颜色值是挨在一起的，比如第 1 个像素的 R、G、B 在 Buffer 里是连续的 3 个字节，第 2 个像素的 R、G、B 紧接着也是连续 3 个字节...
+    // CHW 格式：C = Channel (通道)、H = Height (行)、W = Width (列)
+    // 核心特点：同一个通道的所有像素值是挨在一起的，比如数组前 50176 个元素全是「所有像素的 R 值」，中间 50176 个全是「所有像素的 G 值」，最后 50176 个全是「所有像素的 B 值」
+
     // 遍历每个像素位置 (y, x)，进行归一化并重排维度
-    for (let y = 0; y < 224; y++) {
-      for (let x = 0; x < 224; x++) {
+    for (let y = 0; y < 224; y++) {// y 代表：图片的【行】，从第0行 → 第223行
+      for (let x = 0; x < 224; x++) {// x 代表：每行的【列】，从第0列 → 第223列
         // 在 HWC 格式中，每个像素占 3 字节（R, G, B）
-        const hwIndex = (y * 224 + x) * 3;
+        const hwIndex = (y * 224 + x) * 3;//一个像素的 3 个颜色值是挨在一起的
 
         // 读取原始像素值（0~255 的整数）
         const r = imageBuffer[hwIndex];
@@ -200,6 +205,7 @@ async function preprocessImage(imagePath) {
 
         // 归一化公式：先除以 255 转为 [0,1]，再减均值、除标准差
         // 同时将 HWC 转为 CHW：R 通道放在前 224×224，G 在中间，B 在最后
+        // RGB通道：存入input数组 → 公式：（0|1|2） * 像素总数 + 像素的位置序号
         input[0 * 224 * 224 + y * 224 + x] = (r / 255.0 - mean[0]) / std[0]; // R → 第0通道
         input[1 * 224 * 224 + y * 224 + x] = (g / 255.0 - mean[1]) / std[1]; // G → 第1通道
         input[2 * 224 * 224 + y * 224 + x] = (b / 255.0 - mean[2]) / std[2]; // B → 第2通道
