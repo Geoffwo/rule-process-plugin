@@ -41,7 +41,9 @@ async function writingRules(inputArray, outputNodeTemplate) {
 
             // 1. 生成一个“脏”的红色掩膜
             const hsv = bgrImg.cvtColor(cv.COLOR_BGR2HSV);
-            const noisyRedMask = hsv.inRange(new cv.Vec(0, 50, 100), new cv.Vec(10, 255, 255));
+            const mask1 = hsv.inRange(new cv.Vec(0, 50, 100), new cv.Vec(10, 255, 255));
+            const mask2 = hsv.inRange(new cv.Vec(170, 50, 100), new cv.Vec(180, 255, 255));
+            const noisyRedMask = mask1.bitwiseOr(mask2);
 
             //noisyRedMask 是一张二值图（白色 = 苹果红色区域，黑色 = 背景），图里有：
             // 背景里的「白色小噪点」（你要去掉的）
