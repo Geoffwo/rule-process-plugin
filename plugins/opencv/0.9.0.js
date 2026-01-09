@@ -31,19 +31,33 @@ async function writingRules(inputArray, outputNodeTemplate) {
 
             console.log(`图片信息：${pngFile.path} | 宽：${width} | 高：${height} | 通道：${channels}`);
 
-            const hsv = bgrImg.cvtColor(cv.COLOR_BGR2HSV);
+            // 形态学处理：
+            // - 它主要针对二值图（黑白图，像素值只有 0 和 255），也可用于灰度图，是边缘检测、目标识别的重要前置步骤。
+            // - 形态学处理的核心是【腐蚀】和【膨胀】，这两个是基础操作；【开运算】和【闭运算】是它们的组合操作。
+            // - 所有操作都遵循一个规则：用结构元素扫描图像的每个像素，根据邻域内的像素值决定当前像素的最终值。
+
+            // 掩码运算的核心：处理【颜色筛选】，在彩色图可以肉眼分辨颜色
+            // 形态学的核心：处理【形状修正】，在二值图里形状缺陷会被放大
 
             // 1. 生成一个“脏”的红色掩膜
-            const mask1 = hsv.inRange(new cv.Vec(0, 50, 100), new cv.Vec(10, 255, 255));
-            const mask2 = hsv.inRange(new cv.Vec(170, 50, 100), new cv.Vec(180, 255, 255));
-            const noisyRedMask = mask1.bitwiseOr(mask2); // 合并两个红色区间
+            const hsv = bgrImg.cvtColor(cv.COLOR_BGR2HSV);
+            const noisyRedMask = hsv.inRange(new cv.Vec(0, 50, 100), new cv.Vec(10, 255, 255));
+
+            //noisyRedMask 是一张二值图（白色 = 苹果红色区域，黑色 = 背景），图里有：
+            // 背景里的「白色小噪点」（你要去掉的）
+            // 苹果区域里的「黑色小洞」（你要填充的）
 
             // 2. 创建结构元素（椭圆，5x5）
+            // 一个白色的小点，到底算不算「噪点」？如果你的尺子是 5x5，这个小点只有 1x1，就会被判定为噪点、被去掉
             const kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, new cv.Size(5, 5));
 
             // 3. 【关键修正】使用 Mat.prototype.morphologyEx
-            const cleanRedMask = noisyRedMask.morphologyEx(kernel,cv.MORPH_OPEN);   // 去噪
-            const finalMask = cleanRedMask.morphologyEx(kernel,cv.MORPH_CLOSE);     // 填洞
+            // 腐蚀：用结构元素扫描图像，当前像素值 = 邻域内的最小值；消除小的亮区域（白色噪点），收缩物体边界；像用橡皮擦 “擦除” 物体的边缘，让物体变小
+            // 膨胀：用结构元素扫描图像，当前像素值 = 邻域内的最大值；填充物体内部的小黑洞，扩张物体边界；像给物体 “描边加粗”，让物体变大
+            // 开运算：先腐蚀 → 后膨胀；消除小的亮噪点，同时保持物体的整体大小不变；先擦除噪点，再还原物体大小，不改变形状
+            // 闭运算：先膨胀 → 后腐蚀；填充物体内部的小黑洞，同时保持物体的整体大小不变；先填补缺口，再还原物体大小，不改变形状
+            const cleanRedMask = noisyRedMask.morphologyEx(kernel,cv.MORPH_OPEN);   // 去噪 cv.MORPH_OPEN 开运算 先腐蚀 → 后膨胀
+            const finalMask = cleanRedMask.morphologyEx(kernel,cv.MORPH_CLOSE);     // 填洞 cv.MORPH_CLOSE 闭运算 先膨胀 → 后腐蚀
 
             // 6. 保存过程图片
             const outputPath_noisy = path.join(outputNodeTemplate.path, 'opencv09_noisy.png')
@@ -52,19 +66,6 @@ async function writingRules(inputArray, outputNodeTemplate) {
             await cv.imwriteAsync(outputPath_noisy, noisyRedMask);
             await cv.imwriteAsync(outputPath_clean, cleanRedMask);
             await cv.imwriteAsync(outputPath_final, finalMask);
-
-            // 7. 原图 → 灰度图 → 再转回 BGR（三通道）
-            const gray = bgrImg.cvtColor(cv.COLOR_BGR2GRAY);
-            const grayBgr = gray.cvtColor(cv.COLOR_GRAY2BGR); // 关键：让灰度图有3通道
-
-            // 8. 【核心】用掩膜把原图的彩色区域“复制”到灰度背景上
-            const result = new cv.Mat(bgrImg.rows, bgrImg.cols, cv.CV_8UC3);
-            grayBgr.copyTo(result); // 先填满灰度
-            bgrImg.copyTo(result, finalMask); // 再把彩色区域覆盖上去
-
-            // 6. 保存处理后的图片（官方imwriteAsync）
-            const outputPath = path.join(outputNodeTemplate.path, 'opencv09.png')
-            await cv.imwriteAsync(outputPath, result);
             console.log(`在图片上绘制图形已保存`);
 
             content.push({
@@ -93,7 +94,7 @@ module.exports = {
     name: 'opencv',
     version: '0.9.0',
     process: writingRules,
-    description: 'opencv基础：图片去除噪声，连接断裂',
+    description: 'opencv基础：图片去除噪声，连接断裂（适用于二值图观察）',
     notes: {
         node: '18.20.4',
         msg:'0.x.x代表学习分支，实际插件价值偏低',
