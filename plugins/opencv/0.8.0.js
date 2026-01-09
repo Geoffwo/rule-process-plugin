@@ -16,62 +16,50 @@ async function writingRules(inputArray, outputNodeTemplate) {
         ];
     }
 
+    // 保留指定颜色，其余变灰
+    // H 色调 红=0°, 绿=120°, 蓝=240°
+    // S 饱和度 S=0 → 灰色；S=255 → 最鲜艳
+    // V 明度 V=0 → 黑色；V=255 → 最亮
+    const lower1 = new cv.Vec(0, 50, 100);   //H=0 S=50 V=100 下限
+    const upper1 = new cv.Vec(10, 255, 255);  //H=10 S=255 V=255 上限
+    // 如果想要减少粉红 就将s从50变为100
+    const lower2 = new cv.Vec(170, 50, 100); //H=170 S=50 V=100 下限
+    const upper2 = new cv.Vec(180, 255, 255); //H=180 S=255 V=255 上限
+
     const content = []
     for (const pngFile of pngFiles) {
         try {
             // 读取图片（支持JPG、PNG等格式）
             // imreadAsync是异步方法，返回图像矩阵对象
             // const img = cv.imread(pngFile.path);//同步
-            const img = await cv.imreadAsync(pngFile.path);
+            const bgrImg = await cv.imreadAsync(pngFile.path);//默认读取方式 BGR
 
             // 获取基本信息
-            const width = img.cols;    // 宽度（列数）
-            const height = img.rows;   // 高度（行数）
-            const channels = img.channels;  // 通道数（彩色图通常为3，灰度图为1）
+            const width = bgrImg.cols;    // 宽度（列数）
+            const height = bgrImg.rows;   // 高度（行数）
+            const channels = bgrImg.channels;  // 通道数（彩色图通常为3，灰度图为1）
 
-            console.log('图片信息：');
-            console.log(`文件路径：${pngFile.path}`);
-            console.log(`宽度：${width}px`);
-            console.log(`高度：${height}px`);
-            console.log(`通道数：${channels}（${channels === 3 ? '彩色图（BGR）' : '灰度图'}）`);
+            console.log(`图片信息：${pngFile.path} | 宽：${width} | 高：${height} | 通道：${channels}`);
 
-            // 3. 加深红色分量（仅处理彩色图，灰度图无通道区分）
-            if (channels === 3) {
-                // 3. 分离BGR通道（严格匹配官方splitChannels API）
-                const [matB, matG, matR] = img.splitChannels();
+            // 1. 转 HSV 并生成红色掩膜
+            const hsv = bgrImg.cvtColor(cv.COLOR_BGR2HSV);
+            const mask1 = hsv.inRange(lower1, upper1);
+            const mask2 = hsv.inRange(lower2, upper2);
+            const colorMask = mask1.bitwiseOr(mask2); // 合并两个红色区间
 
-                // const matR_Ratio = matR;// 红色增强系数
-                // 步骤3：逐像素处理（核心：只用at/set，绝对支持）
-                // for (let y = 0; y < height; y++) {
-                //     for (let x = 0; x < width; x++) {
-                //         // 读取浮点型红色值（at是最基础的像素读取方法）
-                //         let rVal = matR.at(y, x);
-                //         // 用JS原生Math做增强+截断
-                //         rVal = rVal * 5; // 增强
-                //         rVal = Math.min(Math.max(rVal, 0), 255); // 截断0-255
-                //         // 写回8位通道（set是最基础的像素设置方法）
-                //         matR_Ratio.set(y, x, rVal);
-                //     }
-                // }
+            // 2. 原图 → 灰度图 → 再转回 BGR（三通道）
+            const gray = bgrImg.cvtColor(cv.COLOR_BGR2GRAY);
+            const grayBgr = gray.cvtColor(cv.COLOR_GRAY2BGR); // 关键：让灰度图有3通道
 
-                const matR_Ratio = matR.mul(1.5);// 红色增强系数
+            // 3. 【核心】用掩膜把原图的彩色区域“复制”到灰度背景上
+            const result = new cv.Mat(bgrImg.rows, bgrImg.cols, cv.CV_8UC3);
+            grayBgr.copyTo(result); // 先填满灰度
+            bgrImg.copyTo(result, colorMask); // 再把彩色区域覆盖上去
 
-                // 5. 合并通道
-                const enhancedImg = new cv.Mat([matB, matG, matR_Ratio]);
-
-                // 显示图片
-                cv.imshow('Image', enhancedImg); // 新窗口名为 "Gradient Image"
-                console.log('图片现在应该在新窗口中显示');
-                cv.waitKey(); // 等待用户按键
-                cv.destroyAllWindows();
-
-                // 6. 保存处理后的图片（官方imwriteAsync）
-                const outputPath = path.join(outputNodeTemplate.path, 'opencv04.png')
-                await cv.imwriteAsync(outputPath, enhancedImg);
-                console.log(`红色加深后的图片已保存：${outputPath}`);
-            } else {
-                console.log(`文件${pngFile.path}是灰度图，无需处理红色通道`);
-            }
+            // 6. 保存处理后的图片（官方imwriteAsync）
+            const outputPath = path.join(outputNodeTemplate.path, 'opencv08.png')
+            await cv.imwriteAsync(outputPath, result);
+            console.log(`在图片上绘制图形已保存`);
 
             content.push({
                 filePath: pngFile.path,
@@ -92,14 +80,14 @@ async function writingRules(inputArray, outputNodeTemplate) {
         }
     }
 
-    return [{...outputNodeTemplate,fileName: 'opencv04',normExt: 'json',content:JSON.stringify(content, null, 2)}];
+    return [{...outputNodeTemplate,fileName: 'opencv08',normExt: 'json',content:JSON.stringify(content, null, 2)}];
 }
 
 module.exports = {
     name: 'opencv',
-    version: '0.4.0',
+    version: '0.8.0',
     process: writingRules,
-    description: 'opencv基础：强化图片红色区域(存在缺陷，参考0.0.7hsv)',
+    description: 'opencv基础：保留红色，其余变灰',
     notes: {
         node: '18.20.4',
         msg:'0.x.x代表学习分支，实际插件价值偏低',

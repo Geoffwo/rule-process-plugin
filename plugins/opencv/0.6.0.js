@@ -80,7 +80,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
         }
     }
 
-    return [{...outputNodeTemplate,fileName: 'opencv05',normExt: 'json',content:JSON.stringify(content, null, 2)}];
+    return [{...outputNodeTemplate,fileName: 'opencv06',normExt: 'json',content:JSON.stringify(content, null, 2)}];
 }
 
 module.exports = {

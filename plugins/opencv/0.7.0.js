@@ -22,56 +22,37 @@ async function writingRules(inputArray, outputNodeTemplate) {
             // 读取图片（支持JPG、PNG等格式）
             // imreadAsync是异步方法，返回图像矩阵对象
             // const img = cv.imread(pngFile.path);//同步
-            const img = await cv.imreadAsync(pngFile.path);
+            const img = await cv.imreadAsync(pngFile.path);//默认读取方式 BGR
 
             // 获取基本信息
             const width = img.cols;    // 宽度（列数）
             const height = img.rows;   // 高度（行数）
             const channels = img.channels;  // 通道数（彩色图通常为3，灰度图为1）
 
-            console.log('图片信息：');
-            console.log(`文件路径：${pngFile.path}`);
-            console.log(`宽度：${width}px`);
-            console.log(`高度：${height}px`);
-            console.log(`通道数：${channels}（${channels === 3 ? '彩色图（BGR）' : '灰度图'}）`);
+            console.log(`图片信息：${pngFile.path} | 宽：${width} | 高：${height} | 通道：${channels}`);
 
-            // 3. 加深红色分量（仅处理彩色图，灰度图无通道区分）
-            if (channels === 3) {
-                // 3. 分离BGR通道（严格匹配官方splitChannels API）
-                const [matB, matG, matR] = img.splitChannels();
+            // BGR → HSV
+            const hsvImg = img.cvtColor(cv.COLOR_BGR2HSV);
+            console.log('已转换为 HSV 色彩空间');
 
-                // const matR_Ratio = matR;// 红色增强系数
-                // 步骤3：逐像素处理（核心：只用at/set，绝对支持）
-                // for (let y = 0; y < height; y++) {
-                //     for (let x = 0; x < width; x++) {
-                //         // 读取浮点型红色值（at是最基础的像素读取方法）
-                //         let rVal = matR.at(y, x);
-                //         // 用JS原生Math做增强+截断
-                //         rVal = rVal * 5; // 增强
-                //         rVal = Math.min(Math.max(rVal, 0), 255); // 截断0-255
-                //         // 写回8位通道（set是最基础的像素设置方法）
-                //         matR_Ratio.set(y, x, rVal);
-                //     }
-                // }
+            // 获取 (50,50) 像素的 HSV 值
+            const [h, s, v] = hsvImg.atRaw(50, 50);
+            console.log(`(50,50) 处 HSV 值: H=${h}, S=${s}, V=${v}`);
 
-                const matR_Ratio = matR.mul(1.5);// 红色增强系数
+            // 分离 HSV 三个通道（用于学习）
+            // const [hChannel, sChannel, vChannel] = hsvImg.splitChannels();
+            const [hChannel, sChannel, vChannel] = cv.split(hsvImg);
 
-                // 5. 合并通道
-                const enhancedImg = new cv.Mat([matB, matG, matR_Ratio]);
-
-                // 显示图片
-                cv.imshow('Image', enhancedImg); // 新窗口名为 "Gradient Image"
-                console.log('图片现在应该在新窗口中显示');
-                cv.waitKey(); // 等待用户按键
-                cv.destroyAllWindows();
-
-                // 6. 保存处理后的图片（官方imwriteAsync）
-                const outputPath = path.join(outputNodeTemplate.path, 'opencv04.png')
-                await cv.imwriteAsync(outputPath, enhancedImg);
-                console.log(`红色加深后的图片已保存：${outputPath}`);
-            } else {
-                console.log(`文件${pngFile.path}是灰度图，无需处理红色通道`);
-            }
+            // 6. 保存处理后的图片（官方imwriteAsync）
+            const outputPath = path.join(outputNodeTemplate.path, 'opencv07_hsv.png')
+            const outputPath_H = path.join(outputNodeTemplate.path, 'opencv07_h.png')
+            const outputPath_S = path.join(outputNodeTemplate.path, 'opencv07_s.png')
+            const outputPath_V = path.join(outputNodeTemplate.path, 'opencv07_v.png')
+            await cv.imwriteAsync(outputPath, hsvImg);
+            await cv.imwriteAsync(outputPath_H, hChannel);
+            await cv.imwriteAsync(outputPath_S, sChannel);
+            await cv.imwriteAsync(outputPath_V, vChannel);
+            console.log(`在图片上绘制图形已保存`);
 
             content.push({
                 filePath: pngFile.path,
@@ -92,14 +73,14 @@ async function writingRules(inputArray, outputNodeTemplate) {
         }
     }
 
-    return [{...outputNodeTemplate,fileName: 'opencv04',normExt: 'json',content:JSON.stringify(content, null, 2)}];
+    return [{...outputNodeTemplate,fileName: 'opencv07',normExt: 'json',content:JSON.stringify(content, null, 2)}];
 }
 
 module.exports = {
     name: 'opencv',
-    version: '0.4.0',
+    version: '0.7.0',
     process: writingRules,
-    description: 'opencv基础：强化图片红色区域(存在缺陷，参考0.0.7hsv)',
+    description: 'opencv基础：hsv颜色识别更优秀，Hue（色调）- Saturation（饱和度）- Value（明度）',
     notes: {
         node: '18.20.4',
         msg:'0.x.x代表学习分支，实际插件价值偏低',
