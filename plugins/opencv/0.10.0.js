@@ -31,6 +31,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
 
       console.log(`图片信息：${pngFile.path} | 宽：${width} | 高：${height} | 通道：${channels}`);
 
+      // ==================== 形态学处理 ====================
       // 1. 生成一个“脏”的红色掩膜
       const hsv = bgrImg.cvtColor(cv.COLOR_BGR2HSV);
       const mask1 = hsv.inRange(new cv.Vec(0, 50, 100), new cv.Vec(10, 255, 255));
@@ -47,8 +48,15 @@ async function writingRules(inputArray, outputNodeTemplate) {
       // ==================== 轮廓检测开始 ====================
 
       // 1. 查找轮廓（只找最外层轮廓，简化结构）
-      // cv2.RETR_EXTERNAL: 只检测最外层轮廓
-      // cv2.CHAIN_APPROX_SIMPLE: 压缩水平、垂直和对角线段，只保留端点
+      //findContours：查找轮廓函数
+      //第一个参数：轮廓检索模式
+      // cv.RETR_EXTERNAL	只检测最外层轮廓（忽略所有内部孔洞）	你只想找“物体整体”，比如一个红苹果（不管它有没有核）
+      // cv.RETR_LIST	检测所有轮廓，不建立层级关系	快速获取所有边缘，不在乎内外
+      // cv.RETR_TREE	检测所有轮廓，并构建完整的嵌套树结构（父-子关系）	需要区分“外框”和“内孔”（比如字母 O 有两个轮廓）
+      //第二个参数：轮廓近似方法
+      // cv.CHAIN_APPROX_NONE	保存轮廓上每一个像素点	精确但数据量大（一条直线存 100 个点）
+      // cv.CHAIN_APPROX_SIMPLE	压缩冗余点，只保留关键点（如直线只存两端）	节省内存，加速后续计算
+      // const contours = noisyRedMask.findContours(cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE);//不使用形态学处理的结果测试
       const contours = finalMask.findContours(cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE);
 
       // 2. 复制原图用于绘制（避免修改原始 bgrImg）
