@@ -62,7 +62,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
                 // 显示图片
                 cv.imshow('Image', enhancedImg); // 新窗口名为 "Gradient Image"
                 console.log('图片现在应该在新窗口中显示');
-                cv.waitKey(); // 等待用户按键
+                cv.waitKey(3000); // 等待3s后自动关闭
                 cv.destroyAllWindows();
 
                 // 6. 保存处理后的图片（官方imwriteAsync）
@@ -99,7 +99,7 @@ module.exports = {
     name: 'opencv',
     version: '0.4.0',
     process: writingRules,
-    description: 'opencv基础：强化图片红色区域(存在缺陷，参考0.0.7hsv)',
+    description: 'opencv基础：强化图片红色区域(存在缺陷，参考0.8.2hsv)',
     notes: {
         node: '18.20.4',
         msg:'0.x.x代表学习分支，实际插件价值偏低',
