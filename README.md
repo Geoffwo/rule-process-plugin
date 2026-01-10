@@ -52,6 +52,7 @@ rule-process-plugin/
 | opencv | 0.8.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.8.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.8.0.js) |
 | opencv | 0.7.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.7.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.7.0.js) |
 | opencv | 0.6.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.6.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.6.0.js) |
+| opencv | 0.5.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.5.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.5.1.js) |
 | opencv | 0.5.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.5.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.5.0.js) |
 | opencv | 0.4.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.4.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.4.0.js) |
 | opencv | 0.3.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.3.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.3.0.js) |
