@@ -213,6 +213,10 @@
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.5.0.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.5.0.js"
       },
+      "0.5.1": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.5.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.5.1.js"
+      },
       "0.6.0": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.6.0.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.6.0.js"
