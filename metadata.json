@@ -315,6 +315,14 @@
       }
     }
   },
+  "xlsx2xlsx": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/xlsx2xlsx/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/xlsx2xlsx/1.0.0.js"
+      }
+    }
+  },
   "zip2pwd": {
     "versions": {
       "1.0.0": {
