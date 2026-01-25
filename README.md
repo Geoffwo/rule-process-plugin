@@ -16,6 +16,8 @@ rule-process-plugin/
 | audio2img | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/audio2img/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/audio2img/1.0.0.js) |
 | audio2txt | 1.0.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/audio2txt/1.0.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/audio2txt/1.0.1.js) |
 | audio2txt | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/audio2txt/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/audio2txt/1.0.0.js) |
+| crawler | 2.0.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/crawler/2.0.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/crawler/2.0.1.js) |
+| crawler | 2.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/crawler/2.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/crawler/2.0.0.js) |
 | crawler | 1.1.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/crawler/1.1.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/crawler/1.1.1.js) |
 | crawler | 1.1.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/crawler/1.1.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/crawler/1.1.0.js) |
 | crawler | 1.0.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/crawler/1.0.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/crawler/1.0.1.js) |
@@ -54,6 +56,7 @@ rule-process-plugin/
 | opencv | 0.8.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.8.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.8.1.js) |
 | opencv | 0.8.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.8.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.8.0.js) |
 | opencv | 0.7.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.7.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.7.0.js) |
+| opencv | 0.6.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.6.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.6.1.js) |
 | opencv | 0.6.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.6.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.6.0.js) |
 | opencv | 0.5.3 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.5.3.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.5.3.js) |
 | opencv | 0.5.2 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.5.2.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.5.2.js) |
