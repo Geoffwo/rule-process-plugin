@@ -44,6 +44,9 @@ rule-process-plugin/
 | img2format | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/img2format/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/img2format/1.0.0.js) |
 | imgClassify | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/imgClassify/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/imgClassify/1.0.0.js) |
 | json2xlsx | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/json2xlsx/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/json2xlsx/1.0.0.js) |
+| opencv | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/1.0.0.js) |
+| opencv | 0.12.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.12.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.12.0.js) |
+| opencv | 0.11.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.11.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.11.0.js) |
 | opencv | 0.10.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.10.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.10.1.js) |
 | opencv | 0.10.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.10.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.10.0.js) |
 | opencv | 0.9.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.9.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.9.0.js) |
@@ -68,6 +71,7 @@ rule-process-plugin/
 | xlsx2json | 1.0.2 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/xlsx2json/1.0.2.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/xlsx2json/1.0.2.js) |
 | xlsx2json | 1.0.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/xlsx2json/1.0.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/xlsx2json/1.0.1.js) |
 | xlsx2json | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/xlsx2json/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/xlsx2json/1.0.0.js) |
+| xlsx2xlsx | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/xlsx2xlsx/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/xlsx2xlsx/1.0.0.js) |
 | zip2pwd | 1.1.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/zip2pwd/1.1.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/zip2pwd/1.1.0.js) |
 | zip2pwd | 1.0.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/zip2pwd/1.0.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/zip2pwd/1.0.1.js) |
 | zip2pwd | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/zip2pwd/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/zip2pwd/1.0.0.js) |
