@@ -1,5 +1,6 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
+const xlsx = require('xlsx');
 const path = require("path");
 
 /**
@@ -7,8 +8,8 @@ const path = require("path");
  * 读取输入的PNG/图片文件，使用OpenCV提取图片的基本信息（宽度、高度、通道数等）
  */
 async function writingRules(inputArray, outputNodeTemplate) {
-  const outputPath = outputNodeTemplate.path;
-  const inputPath = path.join(outputPath, '../inputDir');
+  const outputDir = outputNodeTemplate.path;
+  const inputDir = path.join(outputDir, '../inputDir');
 
   // 检查文件是否存在
   const jsonFile = inputArray.find(file => file.normExt === 'json' && file.name === 'config');
@@ -17,7 +18,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
     console.log('未找到 jsonFiles 数据');
     const jsonTemplate = createDefaultConfig();
     return [
-      { ...outputNodeTemplate, path: inputPath, fileName: 'config', normExt: 'json', content: JSON.stringify(jsonTemplate, null, 2) },
+      { ...outputNodeTemplate, path: inputDir, fileName: 'config', normExt: 'json', content: JSON.stringify(jsonTemplate, null, 2) },
       { ...outputNodeTemplate, content: '错误: 未找到jsonFiles数据' },
     ];
   }
@@ -26,9 +27,16 @@ async function writingRules(inputArray, outputNodeTemplate) {
 
   const configs = JSON.parse(jsonFile.content);
   for (const config of configs) {
+    const fileName = `${config.cityPinyin}-${config.yearMonth}`
     const weatherList = await crawlWeather(config) || [];
-    content.push(...weatherList)
+    content.push({
+      name: fileName,
+      data: weatherList,
+    })
   }
+
+  const outputPath = path.join(outputDir, `result.xlsx`) // 临时目录绝对路径
+  writeExcel(content,outputPath)
 
   return [{...outputNodeTemplate,fileName: 'result',normExt: 'json',content:JSON.stringify(content, null, 2)}];
 }
@@ -63,7 +71,7 @@ async function crawlWeather(config) {
   const TARGET_URL = `https://www.tianqihoubao.com/lishi/${config.cityPinyin}/month/${config.yearMonth}.html`;
 
   try {
-    console.log(`🔍 开始爬取 ${config.cityPinyin} ${config.yearMonth} 的天气数据...`);
+    console.log(`开始爬取 ${config.cityPinyin} ${config.yearMonth} 的天气数据...`);
 
     // 1. 延迟请求（反爬）
     const delay = config.delay || 1000
@@ -96,38 +104,58 @@ async function crawlWeather(config) {
 
       // 提取并清洗数据（去除空格、换行）
       const city = config.cityPinyin
+      const yearMonth = config.yearMonth
       const date = $(tds[0]).text().replace(/\s+/g, ''); // 日期
       const weather = $(tds[1]).text().replace(/\s+/g, ''); // 天气状况（晴/雨等）
       const temp = $(tds[2]).text().replace(/\s+/g, ''); // 气温
       const wind = $(tds[3]).text().replace(/\s+/g, ''); // 风力风向
 
       if (date) { // 过滤空数据
-        weatherList.push({ city, date, weather, temp, wind });
+        weatherList.push({ city, yearMonth, date, weather, temp, wind });
       }
     });
-
-    // 5. 检查是否爬取到数据
-    if (weatherList.length === 0) {
-      console.log('❌ 未爬取到数据：可能城市拼音/年月错误，或网站结构变更');
-      return;
-    }
 
     // 6. 保存数据到本地JSON文件
     return weatherList
   } catch (error) {
-    console.error('❌ 爬取失败：', error.message);
+    console.error('爬取失败：', error.message);
     if (error.response) {
-      console.error('🔍 响应状态码：', error.response.status);
+      console.error('响应状态码：', error.response.status);
     }
   }
 }
 
+function writeExcel(jsonData,outputPath){
+  // 创建新的Excel工作簿
+  const workbook = xlsx.utils.book_new();
+
+  // 遍历每个sheet数据
+  jsonData.forEach(item => {
+    const sheetName = item.name; // sheet名称（市南/市北等）
+    let sheetData = item.data;   // sheet数据
+
+    // 统一数据格式：如果是对象，转为包含该对象的数组
+    if (!Array.isArray(sheetData)) {
+      sheetData = [sheetData];
+    }
+
+    // 将JSON数组转换为Excel工作表
+    const worksheet = xlsx.utils.json_to_sheet(sheetData);
+
+    // 将工作表添加到工作簿
+    xlsx.utils.book_append_sheet(workbook, worksheet, sheetName);
+  });
+
+  // 5. 写入XLSX文件（同步写入，加异常捕获）
+  xlsx.writeFile(workbook, outputPath);
+}
+
 module.exports = {
   name: 'crawler',
-  version: '2.0.0',
+  version: '2.0.1',
   process: writingRules,
   disable: true,
-  description: '获取历史天气数据，包括日期、天气状况、气温、风力风向的json数据', // 准确描述功能
+  description: '获取历史天气数据，包括日期、天气状况、气温、风力风向的excel数据', // 准确描述功能
   notes: {
     node: '18.20.4', // 明确支持的Node版本
   },
@@ -135,8 +163,7 @@ module.exports = {
     normExt: 'json文件',
   },
   output: {
-    normExt: 'json文件',
-    format: "[{xxx}]"
+    normExt: 'excel文件',
   },
   rely: { // 明确指定兼容的依赖版本
     'axios': '0.27.2', // 兼容Node 14的版本
