@@ -183,6 +183,7 @@ function processData(jsonData) {
                 // paramObj['入参-发电效率']=''
 
                 const findResult = resultData.CN_CONTROL_PARAM;
+                paramObj['SOC'] = findResult.SOC
                 paramObj['储能无功（kVA）'] = findResult.REACTIVE_POWER_DATA_VALUE
                 paramObj['储能有功（kVA）'] = findResult.ACTIVE_POWER_DATA_VALUE
 
