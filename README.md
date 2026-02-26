@@ -66,6 +66,7 @@ rule-process-plugin/
 | opencv | 0.3.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.3.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.3.0.js) |
 | opencv | 0.2.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.2.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.2.0.js) |
 | opencv | 0.1.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.1.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.1.0.js) |
+| robotjs | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/robotjs/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/robotjs/1.0.0.js) |
 | signature | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/signature/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/signature/1.0.0.js) |
 | sql2format | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/sql2format/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/sql2format/1.0.0.js) |
 | translation | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/translation/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/translation/1.0.0.js) |
