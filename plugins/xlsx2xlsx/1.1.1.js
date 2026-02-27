@@ -39,8 +39,6 @@ function writingRules(inputArray, outputNodeTemplate) {
     //     normExt:'json',
     //     content: JSON.stringify(readExcel(file),null,2) // 读取Excel内容
     // }));
-
-    return [{...outputNodeTemplate}]
 }
 
 function processData(jsonData) {
@@ -334,7 +332,7 @@ module.exports = {
     name: 'xlsx2xlsx',
     version: '1.1.1',
     process: writingRules,
-    description:'主要用于将xlsx文件转化为xlsx-联合1.1.2（robotjs录像播放-暂未开发）实现伪自动化处理',
+    description:'主要用于将xlsx文件转化为xlsx-联合1.1.2实现伪自动化处理',
     notes:{
         node:'18.20.4',
     },

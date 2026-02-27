@@ -87,8 +87,6 @@ function writingRules(inputArray, outputNodeTemplate) {
     //     normExt:'json',
     //     content: JSON.stringify(readExcel(file),null,2) // 读取Excel内容
     // }));
-
-    return [{...outputNodeTemplate}]
 }
 
 /**
