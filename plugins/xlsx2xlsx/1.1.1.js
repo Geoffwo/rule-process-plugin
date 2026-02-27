@@ -88,7 +88,7 @@ function processData(jsonData) {
             "A相电压(V)": phaseAVoltage || 0,
             "B相电压(V)": phaseBVoltage || 0,
             "C相电压(V)": phaseCVoltage || 0,
-            "光伏无功（kVA）": pvReactivePower || '',
+            "光伏无功（kVA）": pvReactivePower || 0,
             "理论可调最大无功（kVA）": '', // 暂留空，可根据需求补充
             "是否下发成功": '', // 暂留空，可根据需求补充
             "":'',
@@ -334,7 +334,7 @@ module.exports = {
     name: 'xlsx2xlsx',
     version: '1.1.1',
     process: writingRules,
-    description:'主要用于将xlsx文件转化为xlsx-联合1.1.2实现伪自动化处理',
+    description:'主要用于将xlsx文件转化为xlsx-联合1.1.2（robotjs录像播放-暂未开发）实现伪自动化处理',
     notes:{
         node:'18.20.4',
     },
