@@ -166,6 +166,12 @@ async function writingRules(inputArray, outputNodeTemplate) {
     }
   }
 
+  console.log('   → 保存原始文件');
+  robot.keyToggle('control', 'down');
+  robot.keyTap('s');
+  robot.keyToggle('control', 'up');
+  await sleep(1000);
+
   // 5.6 关闭汇总文件，切回源Excel
   console.log('→ 关闭所有文件');
   robot.keyToggle('alt', 'down');
