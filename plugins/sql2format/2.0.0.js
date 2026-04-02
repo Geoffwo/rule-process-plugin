@@ -35,12 +35,12 @@ async function writingRules(inputArray, outputNodeTemplate) {
   // 自动读取 data.txt 并执行SQL替换
   const outputSql = replaceSqlKeyParts(dataFile.content);
 
-  return {
+  return [{
     ...outputNodeTemplate,
     fileName: 'result',
     normExt: 'txt',
     content: outputSql // 直接返回SQL字符串，去掉JSON.stringify
-  };
+  }];
 }
 
 // ====================== 规则引擎插件导出 ======================
