@@ -17,6 +17,9 @@ async function writingRules(inputArray, outputNodeTemplate) {
         const mouse = robot.getMousePos();
         console.log(`当前鼠标坐标：x = ${mouse.x}, y = ${mouse.y}`)
     }, 1000);
+
+    // 核心修复：阻止程序退出
+    await new Promise(() => {});
 }
 
 module.exports = {
