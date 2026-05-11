@@ -124,6 +124,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
   const { url, method, headers, bodyTemplate, delay = 200 } = config;
 
   let success = 0, fail = 0;
+  const content = []
 
   for (let i = 0; i < jsonData.length; i++) {
     const row = jsonData[i];
@@ -148,10 +149,24 @@ async function writingRules(inputArray, outputNodeTemplate) {
       console.log('返回数据：');
       console.dir(responseData, { depth: null, colors: true });
       console.log('---------------------------------------');
+
+      content.push({
+        status:'success',
+        index:i,
+        data:body,
+        resp:responseData
+      })
     } catch (err) {
       fail++;
       const status = err.response?.status || err.code || '网络错误';
       console.error(`[${i + 1}/${jsonData.length}] 失败: ${err.message} (状态: ${status})`);
+
+      content.push({
+        status:'fail',
+        index:i,
+        data:body,
+        resp:err
+      })
     }
 
     await sleep(delay);
@@ -159,6 +174,14 @@ async function writingRules(inputArray, outputNodeTemplate) {
 
   console.log(`\n\n批量处理完成！成功: ${success}, 失败: ${fail}`);
 
+  content.unshift({
+    successTotal:success,
+    failTotal:fail,
+  })
+
+  return [
+    {...outputNodeTemplate, fileName: 'result', normExt:'json', content: JSON.stringify(content, null, 2)}
+  ];
 }
 
 // module.exports = writingRules; // 导出主处理函数
