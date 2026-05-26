@@ -256,7 +256,6 @@ module.exports = {
   },
   rely: {
     xlsx:'0.18.0',
-    robotjs:'0.6.0',
-    'screenshot-desktop':'1.15.4'
+    robotjs:'0.6.0'
   }
 };
