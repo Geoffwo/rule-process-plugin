@@ -35,7 +35,7 @@ stages:
           - git commit -m "[ci skip] Auto-update metadata&readme" || echo "No changes to commit"
           - ''
           - '# 使用 HTTPS + 令牌推送'
-          - git push https://Geoffwo:$ACCESS_TOKEN@gitee.com/Geoffwo/rule-process-plugin.git master
+          - git push https://Geoffwo:$ACCESS_TOKEN@gitee.com/Geoffwo/rule-process-plugin.git HEAD:master
         caches: []
         notify: []
         strategy:
