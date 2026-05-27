@@ -152,6 +152,10 @@
       "2.0.0": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/formAutoFill/2.0.0.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/formAutoFill/2.0.0.js"
+      },
+      "3.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/formAutoFill/3.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/formAutoFill/3.0.0.js"
       }
     }
   },
