@@ -371,7 +371,8 @@ function createConfigTemplate() {
       { "type": "keyTap", "value": "enter" },
 
       { "type": "click", "displace": "addBtn", "delay": 1000 },
-      { "type": "input", "displace": "姓名" },
+      { "type": "input", "value": "11111" },
+      { "type": "input", "displace": "姓名", "value": "11111" },
       { "type": "click", "displace": "saveBtn", "delay": 1500 }
     ]
   };
