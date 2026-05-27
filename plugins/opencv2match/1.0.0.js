@@ -195,8 +195,8 @@ async function findBrowserIcon(option={}) {
 
     return {
       ...bestMatch,
-      x: centerX,
-      y: centerY
+      x: Math.round(centerX),
+      y: Math.round(centerY),
     };
   }
 
@@ -259,7 +259,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
       const templatesBuffer = templatesItem && templatesItem.content;
       if (!templatesBuffer) {
         return [
-          { ...outputNodeTemplate, content: `错误: 未找到 需要匹配的页面,请在 templates 目录下存放${mapping.templates}截图，图片名需要与 mapping.json 匹配` }
+          { ...outputNodeTemplate, content: `错误: 未找到 模板图片,请在 templates 目录下存放${mapping.templates}截图，图片名需要与 mapping.json 匹配` }
         ];
       }
 
@@ -278,11 +278,11 @@ async function writingRules(inputArray, outputNodeTemplate) {
 
       if (browser) {
         const pos={
-          x:Math.round(browser.x),
-          y:Math.round(browser.y)
+          x:browser.x,
+          y:browser.y
         }
         console.log(`鼠标移动到（处理后）: (${pos.x}, ${pos.y})`);
-        await clickPos(pos, 300, {double: true})
+        await clickPos(browser, 300, {double: true})
 
         console.log('已模拟双击');
 
