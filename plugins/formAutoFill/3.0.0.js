@@ -279,7 +279,7 @@ async function executeStep(step, currentData, config, context) {
       });
 
       if (!matchResult) {
-        console.log(`未找到模板 "${step.template}"，跳过此步骤`);
+        console.log(`${step.matchs}匹配页面 未找到模板 "${step.templates}"的区域，跳过坐标记录`);
         break;
       }
 
