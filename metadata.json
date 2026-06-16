@@ -40,6 +40,18 @@
       "2.0.1": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/batch2api/2.0.1.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/batch2api/2.0.1.js"
+      },
+      "2.1.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/batch2api/2.1.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/batch2api/2.1.0.js"
+      },
+      "2.1.1": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/batch2api/2.1.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/batch2api/2.1.1.js"
+      },
+      "2.1.2": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/batch2api/2.1.2.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/batch2api/2.1.2.js"
       }
     }
   },
