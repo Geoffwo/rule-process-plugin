@@ -280,7 +280,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
   content.unshift({ successTotal: success, failTotal: fail });
 
   return [
-    {...outputNodeTemplate, fileName: 'result', normExt:'json', content: JSON.stringify(content, null, 2)}
+    {...outputNodeTemplate, fileName: 'result2', normExt:'json', content: JSON.stringify(content, null, 2)}
   ];
 }
 
