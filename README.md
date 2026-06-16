@@ -22,6 +22,7 @@ rule-process-plugin/
 | audio2img | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/audio2img/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/audio2img/1.0.0.js) |
 | audio2txt | 1.0.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/audio2txt/1.0.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/audio2txt/1.0.1.js) |
 | audio2txt | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/audio2txt/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/audio2txt/1.0.0.js) |
+| batch2api | 2.0.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/batch2api/2.0.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/batch2api/2.0.1.js) |
 | batch2api | 2.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/batch2api/2.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/batch2api/2.0.0.js) |
 | batch2api | 1.1.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/batch2api/1.1.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/batch2api/1.1.1.js) |
 | batch2api | 1.1.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/batch2api/1.1.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/batch2api/1.1.0.js) |
