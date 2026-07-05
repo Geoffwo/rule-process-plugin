@@ -19,6 +19,42 @@
       }
     }
   },
+  "batch2api": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/batch2api/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/batch2api/1.0.0.js"
+      },
+      "1.1.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/batch2api/1.1.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/batch2api/1.1.0.js"
+      },
+      "1.1.1": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/batch2api/1.1.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/batch2api/1.1.1.js"
+      },
+      "2.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/batch2api/2.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/batch2api/2.0.0.js"
+      },
+      "2.0.1": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/batch2api/2.0.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/batch2api/2.0.1.js"
+      },
+      "2.1.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/batch2api/2.1.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/batch2api/2.1.0.js"
+      },
+      "2.1.1": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/batch2api/2.1.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/batch2api/2.1.1.js"
+      },
+      "2.1.2": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/batch2api/2.1.2.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/batch2api/2.1.2.js"
+      }
+    }
+  },
   "crawler": {
     "versions": {
       "1.0.0": {
@@ -135,6 +171,22 @@
       }
     }
   },
+  "formAutoFill": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/formAutoFill/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/formAutoFill/1.0.0.js"
+      },
+      "2.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/formAutoFill/2.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/formAutoFill/2.0.0.js"
+      },
+      "3.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/formAutoFill/3.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/formAutoFill/3.0.0.js"
+      }
+    }
+  },
   "generateJavaMode": {
     "versions": {
       "1.0.0": {
@@ -188,6 +240,14 @@
       "1.0.0": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/json2xlsx/1.0.0.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/json2xlsx/1.0.0.js"
+      }
+    }
+  },
+  "mysql2xlsx": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/mysql2xlsx/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/mysql2xlsx/1.0.0.js"
       }
     }
   },
@@ -275,6 +335,26 @@
       }
     }
   },
+  "opencv2match": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2match/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2match/1.0.0.js"
+      }
+    }
+  },
+  "robotjs": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/robotjs/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/robotjs/1.0.0.js"
+      },
+      "1.1.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/robotjs/1.1.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/robotjs/1.1.0.js"
+      }
+    }
+  },
   "signature": {
     "versions": {
       "1.0.0": {
@@ -288,6 +368,14 @@
       "1.0.0": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/sql2format/1.0.0.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/sql2format/1.0.0.js"
+      },
+      "2.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/sql2format/2.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/sql2format/2.0.0.js"
+      },
+      "2.0.1": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/sql2format/2.0.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/sql2format/2.0.1.js"
       }
     }
   },
@@ -336,6 +424,18 @@
       "1.0.1": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/xlsx2xlsx/1.0.1.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/xlsx2xlsx/1.0.1.js"
+      },
+      "1.1.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/xlsx2xlsx/1.1.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/xlsx2xlsx/1.1.0.js"
+      },
+      "1.1.1": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/xlsx2xlsx/1.1.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/xlsx2xlsx/1.1.1.js"
+      },
+      "1.1.2": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/xlsx2xlsx/1.1.2.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/xlsx2xlsx/1.1.2.js"
       }
     }
   },
