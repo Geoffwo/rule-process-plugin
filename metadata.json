@@ -239,19 +239,15 @@
       }
     }
   },
-  "insert2mysql": {
+  "insert2database": {
     "versions": {
       "1.0.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/insert2mysql/1.0.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/insert2mysql/1.0.0.js"
-      }
-    }
-  },
-  "insert2sqlServer": {
-    "versions": {
-      "1.0.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/insert2sqlServer/1.0.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/insert2sqlServer/1.0.0.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/insert2database/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/insert2database/1.0.0.js"
+      },
+      "1.1.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/insert2database/1.1.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/insert2database/1.1.0.js"
       }
     }
   },
