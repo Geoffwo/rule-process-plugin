@@ -1,4 +1,4 @@
-const sql = require('mssql');
+const mysql = require('mysql2/promise');
 
 // ==================== 工具函数 & 常量定义 ====================
 // 正则：匹配单条 INSERT 语句（去掉全局g，改用循环截取文本）
@@ -40,26 +40,21 @@ ${sql}
 `;
 }
 
-// ==================== MSSQL 连接配置 & 连接池 ====================
+// ==================== MySQL 连接配置 & 连接池 ====================
 const dbConfig = {
-    user: 'sa',            // 账号
-    password: '123456',    // 密码
-    server: 'localhost',   // 地址
-    database: 'demo',      // 库名
-    port: 1433,            // MSSQL 默认端口
-    options: {
-        encrypt: false,    // 本地测试关闭加密，线上建议开启 true
-        trustServerCertificate: true
-    },
-    pool: {
-        max: 10,
-        min: 0,
-        idleTimeoutMillis: 30000
-    }
+    host: 'localhost',
+    port: 3306,
+    user: 'root',
+    password: '123456',
+    database: 'demo',
+    charset: 'utf8mb4',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 };
 
-// 创建连接池
-const pool = new sql.ConnectionPool(dbConfig);
+// 创建MySQL连接池
+const pool = mysql.createPool(dbConfig);
 
 /**
  * 构建实时统计快照
@@ -216,11 +211,11 @@ async function* writingRules(inputArray, outputNodeTemplate) {
 
 // ==================== 模块导出 ====================
 module.exports = {
-    name: 'insert2sqlServer',
+    name: 'insert2database',
     version: '1.0.0',
     mode: 'stream',
     process: writingRules,
-    description:'流式解析SQL，单文件独立统计，报错即时yield输出日志，无内存缓存防OOM',
+    description:'mysql-流式解析SQL，单文件独立统计，报错即时yield输出日志，无内存缓存防OOM',
     notes:{
         node:'18.20.4',
     },
@@ -231,6 +226,6 @@ module.exports = {
         normExt: 'log日志文件',
     },
     rely:{//默认 latest
-        'mssql':'12.7.0'
+        "mysql2": "3.22.3",
     }
 };
