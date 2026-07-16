@@ -366,7 +366,7 @@ function createConfigTemplate() {
             { type: 'keyHold', value: 'd',delay: 2000 },//移动
             { type: 'keyHold', value: 's',delay: 2500 },//移动
             { type: 'keyHold', value: 'd',delay: 2000 },//移动
-            { type: 'wait', delay: 10000 },//等待战斗结束
+            { type: 'wait', delay: 15000 },//等待战斗结束
 
             //到达第2场景点
             { type: 'keyHold', value: 'w',delay: 2000 },//移动
