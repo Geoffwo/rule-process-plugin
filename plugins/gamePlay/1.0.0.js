@@ -366,7 +366,7 @@ function createConfigTemplate() {
             { type: 'keyHold', value: 'd',delay: 2000 },//移动
             { type: 'keyHold', value: 's',delay: 2500 },//移动
             { type: 'keyHold', value: 'd',delay: 2000 },//移动
-            { type: 'wait', delay: 15000 },//等待战斗结束
+            { type: 'wait', delay: 10000 },//等待战斗结束
 
             //到达第2场景点
             { type: 'keyHold', value: 'w',delay: 2000 },//移动
@@ -456,7 +456,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
 
 // ====================== 插件导出 ======================
 module.exports = {
-    name: 'gameAuto',
+    name: 'gamePlay',
     version: '1.0.0',
     process: writingRules,
     description: '游戏按键精灵：纯JSON配置+键鼠模拟+图像识别(百炼英雄-刷经验)',
