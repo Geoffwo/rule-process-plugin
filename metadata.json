@@ -191,11 +191,19 @@
       }
     }
   },
-  "gameAuto": {
+  "gamePlay": {
     "versions": {
       "1.0.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/gameAuto/1.0.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/gameAuto/1.0.0.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/gamePlay/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/gamePlay/1.0.0.js"
+      }
+    }
+  },
+  "gameRecord": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/gameRecord/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/gameRecord/1.0.0.js"
       }
     }
   },
