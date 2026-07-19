@@ -416,10 +416,6 @@ async function writingRules(inputArray, outputNodeTemplate) {
     let loopCount = loopTotal;
     console.log(`总循环次数: ${loopTotal}`);
 
-    // 2. 初始等待（让用户切换到目标页面）
-    console.log(`等待 ${config.globals.initialWait / 1000} 秒，请切换到目标页面...`);
-    await sleep(config.globals.initialWait);
-
     const matchsItems = inputArray.filter(item => item.dir.endsWith('matchs'));
     const templatesItems = inputArray.filter(item => item.dir.endsWith('templates'));
     const debugPath = path.join(outputDir, '/debug');
@@ -429,8 +425,12 @@ async function writingRules(inputArray, outputNodeTemplate) {
         debugPath:debugPath
     }
 
-    // 3. 循环执行工作流
+    // 2. 循环执行工作流
     while (loopCount--) {
+        // 3. 初始等待（让用户切换到目标页面）
+        console.log(`等待 ${config.globals.initialWait / 1000} 秒，请切换到目标页面...`);
+        await sleep(config.globals.initialWait);
+
         console.log(`\n========== 第 ${loopTotal-loopCount}/${loopTotal} 次循环 ==========`);
 
         const workflow = config.workflow || [];
