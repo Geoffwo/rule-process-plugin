@@ -137,6 +137,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
 module.exports = {
   name: 'audio2txt',
   version: '1.0.0',
+  disable: true,
   process: writingRules,
   description: '基于Vosk的离线语音识别插件 - 支持将16kHz单声道WAV音频文件转换为文本，无需网络连接，适用于语音转文字场景',
   notes:{
