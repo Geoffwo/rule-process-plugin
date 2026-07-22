@@ -99,6 +99,7 @@ rule-process-plugin/
 | sql2format | 2.0.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/sql2format/2.0.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/sql2format/2.0.1.js) |
 | sql2format | 2.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/sql2format/2.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/sql2format/2.0.0.js) |
 | sql2format | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/sql2format/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/sql2format/1.0.0.js) |
+| ssh2exec | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/ssh2exec/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/ssh2exec/1.0.0.js) |
 | translation | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/translation/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/translation/1.0.0.js) |
 | txt2audio | 1.1.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/txt2audio/1.1.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/txt2audio/1.1.0.js) |
 | txt2audio | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/txt2audio/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/txt2audio/1.0.0.js) |
