@@ -159,6 +159,18 @@
       }
     }
   },
+  "emojiPixel": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/emojiPixel/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/emojiPixel/1.0.0.js"
+      },
+      "2.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/emojiPixel/2.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/emojiPixel/2.0.0.js"
+      }
+    }
+  },
   "emotion2analysis": {
     "versions": {
       "1.0.0": {
