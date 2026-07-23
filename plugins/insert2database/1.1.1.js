@@ -87,6 +87,15 @@ function buildStatSnapshot(allFileResults, fileName, fileSize, stmtCount, succes
 
 // ==================== 主处理生成器函数（流式处理入口） ====================
 async function* writingRules(inputArray, outputNodeTemplate) {
+    // 先初始化连接池
+    try {
+        await pool.connect();
+        console.log('MSSQL 连接池初始化成功');
+    } catch (connErr) {
+        console.error('连接池初始化失败：', connErr);
+        return;
+    }
+
     const sqlFiles = inputArray.filter(item => item.normExt === 'sql');
     if (sqlFiles.length === 0) {
         console.error('错误: 未找到 sql 文件');
@@ -213,7 +222,7 @@ async function* writingRules(inputArray, outputNodeTemplate) {
         content: JSON.stringify(allFileResults, null, 2)
     }];
 
-    await pool.end();
+    await pool.close();
 }
 
 // ==================== 模块导出 ====================
