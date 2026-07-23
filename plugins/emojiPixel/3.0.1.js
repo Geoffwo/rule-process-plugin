@@ -2,7 +2,6 @@ const sharp = require('sharp');
 const GIFEncoder = require('gif-encoder');
 const path = require('path');
 
-
 // ========== 工具函数 ==========
 const random = arr => arr[Math.floor(Math.random() * arr.length)];
 const weightRandom = (items) => {
@@ -15,15 +14,36 @@ const weightRandom = (items) => {
   return items[0].value;
 };
 
+function deepDefaults(target, source) {
+  const result = { ...target };
+  for (const key in source) {
+    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      result[key] = deepDefaults(result[key] || {}, source[key]);
+    } else {
+      result[key] = source[key];
+    }
+  }
+  return result;
+}
+
 // ========== 默认参数 ==========
 const DEFAULTS = {
   blockSize: 12,
   logicWidth: 24,
   logicHeight: 28,
   count: 3,
+  outputFormat: 'gif',
   gifFrameCount: 8,
   gifDelay: 80,
-  gifLoop: 0
+  gifLoop: 0,
+  animation: {
+    blink: true,
+    blinkInterval: 6,
+    blinkDuration: 2,
+    wave: true,
+    wavePath: 'arc',
+    bgEffect: 'blink'      // 默认闪烁，可选 'blink' 'gradient','stars','led','snow' 或 false
+  }
 };
 
 // ========== 配色库 ==========
@@ -57,7 +77,6 @@ const PALETTE = {
   bg: ['#F7F9FC', '#FFF5E6', '#F0F8FF', '#FFFAF0', '#F5F0FF', '#F0FFF4']
 };
 
-// 彩虹色阶
 const RAINBOW = [
   '#FF0000', '#FF7F00', '#FFFF00',
   '#00FF00', '#0000FF', '#4B0082', '#9400D3'
@@ -129,7 +148,152 @@ const ACCESSORIES = [
   }
 ];
 
-// ========== 生成单帧像素画布（含眨眼动画） ==========
+// ========== 背景粒子初始化 ==========
+function initBgData(config, baseData) {
+  const bgType = config.animation?.bgEffect;
+  if (bgType === false || bgType === undefined || bgType === 'blink' || bgType === true || bgType === 'gradient') {
+    baseData.bgData = null; // 这些类型不需要粒子数据
+    return;
+  }
+
+  const { logicWidth, logicHeight } = config;
+  const particles = [];
+
+  if (bgType === 'stars') {
+    for (let i = 0; i < 30; i++) {
+      particles.push({
+        x: Math.floor(Math.random() * logicWidth),
+        y: Math.floor(Math.random() * logicHeight),
+        color: random(['#FFFFFF', '#FFD700', '#FFFACD']),
+        seed: Math.floor(Math.random() * 1000)
+      });
+    }
+  } else if (bgType === 'led') {
+    for (let i = 0; i < 40; i++) {
+      particles.push({
+        x: Math.floor(Math.random() * logicWidth),
+        y: Math.floor(Math.random() * logicHeight),
+        baseColor: random(RAINBOW),
+        seed: Math.floor(Math.random() * 5000)
+      });
+    }
+  } else if (bgType === 'snow') {
+    for (let i = 0; i < 25; i++) {
+      particles.push({
+        x: Math.floor(Math.random() * logicWidth),
+        y: Math.floor(Math.random() * logicHeight),
+        speedY: 0.3 + Math.random() * 0.7,
+        speedX: (Math.random() - 0.5) * 0.3
+      });
+    }
+  }
+
+  baseData.bgData = { type: bgType, particles };
+}
+
+// ========== 绘制动态背景 ==========
+function drawBackground(pixels, config, baseData, frameIndex) {
+  const { logicWidth, logicHeight } = config;
+  const bgType = config.animation?.bgEffect;
+
+  // 无效果或固定背景色（由 generateFrame 初始化时处理）
+  if (bgType === false || bgType === undefined) return;
+
+  // 闪烁背景（切换颜色）
+  if (bgType === true || bgType === 'blink') {
+    const bgColors = PALETTE.bg;
+    const color = bgColors[frameIndex % bgColors.length];
+    for (let y = 0; y < logicHeight; y++) {
+      for (let x = 0; x < logicWidth; x++) {
+        pixels[y][x] = color;
+      }
+    }
+    return;
+  }
+
+  // 渐变背景（垂直）
+  if (bgType === 'gradient') {
+    const c1 = PALETTE.bg[0];
+    const c2 = PALETTE.bg[PALETTE.bg.length - 1];
+    // 简单的线性插值（只考虑 R,G,B）
+    const hexToRgb = (hex) => ({
+      r: parseInt(hex.slice(1,3), 16),
+      g: parseInt(hex.slice(3,5), 16),
+      b: parseInt(hex.slice(5,7), 16)
+    });
+    const rgb1 = hexToRgb(c1);
+    const rgb2 = hexToRgb(c2);
+    for (let y = 0; y < logicHeight; y++) {
+      const t = y / (logicHeight - 1);
+      const r = Math.round(rgb1.r + (rgb2.r - rgb1.r) * t);
+      const g = Math.round(rgb1.g + (rgb2.g - rgb1.g) * t);
+      const b = Math.round(rgb1.b + (rgb2.b - rgb1.b) * t);
+      const color = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+      for (let x = 0; x < logicWidth; x++) {
+        pixels[y][x] = color;
+      }
+    }
+    return;
+  }
+
+  // 粒子效果
+  const bgData = baseData.bgData;
+  if (!bgData || !bgData.particles) return;
+
+  // 先用一个基础色填充（可选），这里用白色或浅灰
+  const baseBg = '#F0F0F0';
+  for (let y = 0; y < logicHeight; y++) {
+    for (let x = 0; x < logicWidth; x++) {
+      pixels[y][x] = baseBg;
+    }
+  }
+
+  const { type, particles } = bgData;
+
+  if (type === 'stars') {
+    particles.forEach(p => {
+      // 伪随机闪烁：只有 (seed + frameIndex) % 3 === 0 时显示
+      if ((p.seed + frameIndex) % 3 === 0) {
+        const px = p.x, py = p.y;
+        if (px >= 0 && px < logicWidth && py >= 0 && py < logicHeight) {
+          pixels[py][px] = p.color;
+        }
+      }
+    });
+  } else if (type === 'led') {
+    particles.forEach(p => {
+      // LED：根据种子和帧索引决定是否点亮
+      const state = (p.seed + frameIndex) % 5;
+      if (state === 0) {
+        // 高亮
+        const px = p.x, py = p.y;
+        if (px >= 0 && px < logicWidth && py >= 0 && py < logicHeight) {
+          pixels[py][px] = p.baseColor;
+        }
+      } else if (state === 1) {
+        // 微亮（更暗）
+        const darkColor = p.baseColor; // 简化：相同颜色
+        const px = p.x, py = p.y;
+        if (px >= 0 && px < logicWidth && py >= 0 && py < logicHeight) {
+          pixels[py][px] = darkColor;
+        }
+      }
+      // 其他状态不画，保持背景色
+    });
+  } else if (type === 'snow') {
+    particles.forEach(p => {
+      const currentY = (p.y + p.speedY * frameIndex) % logicHeight;
+      const currentX = (p.x + p.speedX * frameIndex + logicWidth) % logicWidth;
+      const px = Math.floor(currentX);
+      const py = Math.floor(currentY);
+      if (px >= 0 && px < logicWidth && py >= 0 && py < logicHeight) {
+        pixels[py][px] = '#FFFFFF';
+      }
+    });
+  }
+}
+
+// ========== 生成单帧像素画布 ==========
 function generateFrame(config, baseData, frameIndex = 0) {
   const { logicWidth, logicHeight } = config;
   const {
@@ -138,41 +302,79 @@ function generateFrame(config, baseData, frameIndex = 0) {
     hairStyle, mouthStyle, accessory
   } = baseData;
 
+  // -------- 动画设置 ----------
+  const anim = config.animation || {};
+  const doBlink = anim.blink !== false;
+  const blinkInterval = anim.blinkInterval || 6;
+  const blinkDuration = anim.blinkDuration || 2;
+  const doWave = anim.wave !== false;
+  const waveMode = anim.wavePath || 'arc';
+  const bgEffect = anim.bgEffect;   // 取值可能为 false, true, 字符串
+
+  // 挥手路径
+  const ARC_PATH = [
+    [ 1,  1], [0, 0], [-1, -1], [-2, 0],
+    [-2,  1], [-1,  2], [0,  3], [ 1,  1]
+  ];
+  const UP_DOWN_PATH = [
+    [0, 0], [0, -1], [0, -2], [0, -1],
+    [0, 0], [0, 1],  [0, 2],  [0, 1]
+  ];
+  let wavePath = ARC_PATH;
+  if (waveMode === 'upDown') wavePath = UP_DOWN_PATH;
+  const [dx, dy] = doWave && waveMode !== 'none'
+      ? wavePath[frameIndex % wavePath.length]
+      : [0, 0];
+
+  // 初始化画布（先用 bgColor 填满，如果是动态背景则会被覆盖）
   const pixels = Array.from({ length: logicHeight }, () => Array(logicWidth).fill(bgColor));
 
-  // 身体轮廓
-  const bodyOutline = [[5,17],[6,16],[17,16],[18,17],[4,18],[19,18],[4,19],[19,19],[5,20],[18,20],[6,21],[17,21]];
-  bodyOutline.forEach(([x, y]) => {
-    if (y >= 0 && y < logicHeight && x >= 0 && x < logicWidth) pixels[y][x] = PALETTE.stroke;
-  });
+  // 绘制动态背景（如果开启）
+  if (bgEffect !== false) {
+    drawBackground(pixels, config, baseData, frameIndex);
+  }
 
+  // -------- 身体（先填充，后描边）--------
   // 身体主体
   for (let y = 17; y <= 21; y++) {
     let startX = 5, endX = 18;
     if (y === 21) startX = 6, endX = 17;
     for (let x = startX; x <= endX; x++) {
-      if (pixels[y][x] === bgColor) pixels[y][x] = clothColor;
+      pixels[y][x] = clothColor;
     }
   }
-
   // 衣服阴影
   for (let y = 20; y <= 21; y++) {
     for (let x = 7; x <= 16; x++) {
-      if (pixels[y][x] === clothColor) pixels[y][x] = clothDark;
+      pixels[y][x] = clothDark;
     }
   }
+  // 身体轮廓线
+  const bodyOutline = [[5,17],[6,16],[17,16],[18,17],[4,18],[19,18],[4,19],[19,19],[5,20],[18,20],[6,21],[17,21]];
+  bodyOutline.forEach(([x, y]) => {
+    if (y >= 0 && y < logicHeight && x >= 0 && x < logicWidth) pixels[y][x] = PALETTE.stroke;
+  });
 
   // 领口
   [[10,17],[11,17],[12,17],[13,17],[10,18],[11,18],[12,18],[13,18]].forEach(([x, y]) => {
     if (y < logicHeight) pixels[y][x] = skin;
   });
 
-  // 手
-  [[3,18],[4,18],[3,19],[4,19],[19,18],[20,18],[19,19],[20,19]].forEach(([x, y]) => {
-    if (y < logicHeight) pixels[y][x] = skin;
+  // -------- 手 --------
+  const leftHand = [[3,18],[4,18],[3,19],[4,19]];
+  const rightHandBase = [[19,18],[20,18],[19,19],[20,19]];
+
+  leftHand.forEach(([x, y]) => {
+    if (y < logicHeight && x < logicWidth) pixels[y][x] = skin;
+  });
+  rightHandBase.forEach(([x, y]) => {
+    const nx = x + dx, ny = y + dy;
+    if (nx >= 0 && nx < logicWidth && ny >= 0 && ny < logicHeight) {
+      pixels[ny][nx] = skin;
+    }
   });
 
-  // 腿
+  // -------- 腿 --------
   [[7,22],[8,22],[14,22],[15,22],[7,23],[8,23],[14,23],[15,23]].forEach(([x, y]) => {
     if (y < logicHeight) pixels[y][x] = PALETTE.stroke;
   });
@@ -186,12 +388,7 @@ function generateFrame(config, baseData, frameIndex = 0) {
     if (y < logicHeight) pixels[y][x] = PALETTE.stroke;
   });
 
-  // 头部轮廓
-  const headOutline = [[5,4],[6,3],[7,3],[8,3],[9,3],[10,3],[11,3],[12,3],[13,3],[14,3],[15,3],[16,3],[17,3],[18,4],[4,5],[19,5],[4,6],[19,6],[4,7],[19,7],[4,8],[19,8],[4,9],[19,9],[4,10],[19,10],[4,11],[19,11],[4,12],[19,12],[4,13],[19,13],[4,14],[19,14],[5,15],[18,15],[6,16],[17,16],[7,17],[16,17]];
-  headOutline.forEach(([x, y]) => {
-    if (y >= 0 && y < logicHeight && x >= 0 && x < logicWidth) pixels[y][x] = PALETTE.stroke;
-  });
-
+  // -------- 头部（先填充肤色，再描边）--------
   // 肤色
   for (let y = 5; y <= 16; y++) {
     let startX = 5, endX = 18;
@@ -202,11 +399,13 @@ function generateFrame(config, baseData, frameIndex = 0) {
   for (let y = 7; y <= 15; y++) pixels[y][18] = skinDark;
   for (let x = 8; x <= 15; x++) pixels[16][x] = skinDark;
 
-  // 发型
-  hairStyle.outline.forEach(([x, y]) => {
+  // 头部轮廓线
+  const headOutline = [[5,4],[6,3],[7,3],[8,3],[9,3],[10,3],[11,3],[12,3],[13,3],[14,3],[15,3],[16,3],[17,3],[18,4],[4,5],[19,5],[4,6],[19,6],[4,7],[19,7],[4,8],[19,8],[4,9],[19,9],[4,10],[19,10],[4,11],[19,11],[4,12],[19,12],[4,13],[19,13],[4,14],[19,14],[5,15],[18,15],[6,16],[17,16],[7,17],[16,17]];
+  headOutline.forEach(([x, y]) => {
     if (y >= 0 && y < logicHeight && x >= 0 && x < logicWidth) pixels[y][x] = PALETTE.stroke;
   });
 
+  // -------- 发型（先主色，后轮廓）--------
   if (rarity === 'legendary') {
     hairStyle.main.forEach(([x, y], idx) => {
       const cIdx = (idx + frameIndex) % RAINBOW.length;
@@ -230,22 +429,22 @@ function generateFrame(config, baseData, frameIndex = 0) {
       if (y >= 0 && y < logicHeight && x >= 0 && x < logicWidth) pixels[y][x] = hairHigh;
     });
   }
+  // 头发轮廓线
+  hairStyle.outline.forEach(([x, y]) => {
+    if (y >= 0 && y < logicHeight && x >= 0 && x < logicWidth) pixels[y][x] = PALETTE.stroke;
+  });
 
-  // ===== 眼睛（添加眨眼动画） =====
-  const isBlink = (frameIndex % 2 === 0); // 偶数帧睁眼，奇数帧闭眼
-
+  // -------- 眼睛（眨眼动画）--------
+  const isBlink = doBlink && (frameIndex % blinkInterval >= blinkInterval - blinkDuration);
   if (isBlink) {
-    // 睁眼（原逻辑）
+    [[7,10],[7,11],[16,10],[16,11]].forEach(([x, y]) => pixels[y][x] = skin);
+    [[8,10],[9,10],[8,11],[9,11],[14,10],[15,10],[14,11],[15,11]].forEach(([x, y]) => pixels[y][x] = skin);
+    [[7,10],[8,10],[9,10],[14,10],[15,10],[16,10]].forEach(([x, y]) => pixels[y][x] = '#2D2D2D');
+  } else {
     [[7,10],[7,11],[16,10],[16,11]].forEach(([x, y]) => pixels[y][x] = '#FFFFFF');
     [[8,10],[9,10],[8,11],[9,11],[14,10],[15,10],[14,11],[15,11]].forEach(([x, y]) => pixels[y][x] = eyeColor);
     pixels[10][8] = '#FFFFFF';
     pixels[10][14] = '#FFFFFF';
-  } else {
-    // 闭眼：用肤色覆盖，画一条深色线（睫毛）
-    [[7,10],[7,11],[16,10],[16,11]].forEach(([x, y]) => pixels[y][x] = skin);
-    [[8,10],[9,10],[8,11],[9,11],[14,10],[15,10],[14,11],[15,11]].forEach(([x, y]) => pixels[y][x] = skin);
-    // 画一条深色线表示闭眼
-    [[7,10],[8,10],[9,10],[14,10],[15,10],[16,10]].forEach(([x, y]) => pixels[y][x] = '#2D2D2D');
   }
 
   // 嘴型
@@ -268,7 +467,7 @@ function generateFrame(config, baseData, frameIndex = 0) {
 }
 
 // ========== 生成基础人物数据 ==========
-function generateBaseAvatar(config) {
+function generateBaseAvatar() {
   const rarity = weightRandom(RARITY);
   const skinIdx = Math.floor(Math.random() * PALETTE.skin.length);
   const skin = PALETTE.skin[skinIdx];
@@ -306,7 +505,7 @@ function generateBaseAvatar(config) {
   };
 }
 
-// ========== 渲染单帧 Buffer（修复 composite input） ==========
+// ========== 渲染单帧为 PNG Buffer ==========
 async function renderFrameBuffer(pixels, config) {
   const { blockSize, logicWidth, logicHeight } = config;
   const w = logicWidth * blockSize;
@@ -315,7 +514,6 @@ async function renderFrameBuffer(pixels, config) {
   const composites = [];
   for (let y = 0; y < logicHeight; y++) {
     for (let x = 0; x < logicWidth; x++) {
-      // 生成纯色像素块的 Buffer 作为复合输入
       const tileBuffer = await sharp({
         create: {
           width: blockSize,
@@ -342,26 +540,23 @@ async function renderFrameBuffer(pixels, config) {
       .toBuffer();
 }
 
-// ========== 合成 GIF（兼容 sharp 0.34.5） ==========
+// ========== 合成 GIF ==========
 async function composeGif(frames, config) {
   const { gifDelay, gifLoop, logicWidth, logicHeight, blockSize } = config;
   const width = logicWidth * blockSize;
   const height = logicHeight * blockSize;
 
-  // 1. 用 sharp 将第一帧转为 raw RGBA 像素，获取尺寸
   const firstFramePixels = await sharp(frames[0])
       .ensureAlpha()
       .raw()
       .toBuffer();
 
-  // 2. 初始化 GIF 编码器
   const encoder = new GIFEncoder(width, height);
-  encoder.setQuality(10);           // 颜色量化质量，越高越清晰但慢
+  encoder.setQuality(10);
   encoder.setDelay(gifDelay);
   encoder.setRepeat(gifLoop);
   encoder.writeHeader();
 
-  // 3. 逐帧添加
   encoder.addFrame(firstFramePixels);
   for (let i = 1; i < frames.length; i++) {
     const pixels = await sharp(frames[i])
@@ -371,21 +566,29 @@ async function composeGif(frames, config) {
     encoder.addFrame(pixels);
   }
 
-  // 4. 完成编码
   encoder.finish();
   return encoder.read();
 }
 
-// ========== 默认配置模板 ==========
+// ========== 生成配置模板 ==========
 function createConfigTemplate() {
   return {
     blockSize: 12,
     logicWidth: 24,
     logicHeight: 28,
     count: 6,
+    outputFormat: 'gif',
     gifFrameCount: 8,
     gifDelay: 80,
-    gifLoop: 0
+    gifLoop: 0,
+    animation: {
+      blink: true,
+      blinkInterval: 6,
+      blinkDuration: 2,
+      wave: true,
+      wavePath: 'arc',
+      bgEffect: 'blink'    // 可选 'gradient','stars','led','snow', false
+    }
   };
 }
 
@@ -403,42 +606,62 @@ async function writingRules(inputArray, outputNodeTemplate) {
     ];
   }
 
-  const config = { ...DEFAULTS, ...JSON.parse(configFile.content) };
+  const userConfig = JSON.parse(configFile.content);
+  const config = deepDefaults(DEFAULTS, userConfig);
+
   const results = [];
   const summary = [];
+  const outputFormat = config.outputFormat || 'gif';
 
   for (let i = 1; i <= config.count; i++) {
-    const baseData = generateBaseAvatar(config);
+    const baseData = generateBaseAvatar();
+    // 初始化背景粒子数据
+    initBgData(config, baseData);
+
     const fileName = `avatar_${i}_${Math.random().toString(36).slice(2, 10)}`;
 
-    // 生成所有帧
-    const frameBuffers = [];
-    for (let f = 0; f < config.gifFrameCount; f++) {
-      const framePixels = generateFrame(config, baseData, f);  // f 作为帧索引
-      const buf = await renderFrameBuffer(framePixels, config);
-      frameBuffers.push(buf);
+    if (outputFormat === 'png') {
+      const framePixels = generateFrame(config, baseData, 0);
+      const pngBuffer = await renderFrameBuffer(framePixels, config);
+      results.push({
+        ...outputNodeTemplate,
+        fileName,
+        normExt: 'png',
+        content: pngBuffer
+      });
+      summary.push({
+        index: i,
+        file: `${fileName}.png`,
+        rarity: baseData.rarity,
+        hair: baseData.hairStyle.name,
+        mouth: baseData.mouthStyle.name,
+        accessory: baseData.accessory?.name || null
+      });
+      console.log(`生成静态头像 ${i}/${config.count} | 稀有度:${baseData.rarity}${baseData.accessory ? ' | 配饰:' + baseData.accessory.name : ''}`);
+    } else {
+      const frameBuffers = [];
+      for (let f = 0; f < config.gifFrameCount; f++) {
+        const framePixels = generateFrame(config, baseData, f);
+        const buf = await renderFrameBuffer(framePixels, config);
+        frameBuffers.push(buf);
+      }
+      const gifBuffer = await composeGif(frameBuffers, config);
+      results.push({
+        ...outputNodeTemplate,
+        fileName,
+        normExt: 'gif',
+        content: gifBuffer
+      });
+      summary.push({
+        index: i,
+        file: `${fileName}.gif`,
+        rarity: baseData.rarity,
+        hair: baseData.hairStyle.name,
+        mouth: baseData.mouthStyle.name,
+        accessory: baseData.accessory?.name || null
+      });
+      console.log(`生成动态头像 ${i}/${config.count} | 稀有度:${baseData.rarity}${baseData.accessory ? ' | 配饰:' + baseData.accessory.name : ''}`);
     }
-
-    // 合成GIF
-    const gifBuffer = await composeGif(frameBuffers, config);
-
-    results.push({
-      ...outputNodeTemplate,
-      fileName,
-      normExt: 'gif',
-      content: gifBuffer
-    });
-
-    summary.push({
-      index: i,
-      file: `${fileName}.gif`,
-      rarity: baseData.rarity,
-      hair: baseData.hairStyle.name,
-      mouth: baseData.mouthStyle.name,
-      accessory: baseData.accessory?.name || null
-    });
-
-    console.log(`生成动态头像 ${i}/${config.count} | 稀有度:${baseData.rarity}${baseData.accessory ? ' | 配饰:' + baseData.accessory.name : ''}`);
   }
 
   results.push({
@@ -447,6 +670,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
     normExt: 'json',
     content: JSON.stringify({
       total: config.count,
+      format: outputFormat,
       generatedAt: new Date().toLocaleString(),
       avatars: summary
     }, null, 2)
@@ -457,20 +681,14 @@ async function writingRules(inputArray, outputNodeTemplate) {
 
 module.exports = {
   name: 'emojiPixel',
-  version: '2.0.0',
+  version: '3.0.1',
   process: writingRules,
-  description: '全部品级输出GIF，传奇头发彩虹流光，所有角色眨眼动画',
-  notes: {
-    node: '18.20.4'
-  },
-  input: {
-    normExt: 'json配置文件'
-  },
-  output: {
-    normExt: 'gif'
-  },
+  description: '像素头像生成器，支持多种动态背景（闪烁/渐变/星星/LED/雪花）、眨眼/挥手动画、静态PNG，传奇品质彩虹头发',
+  notes: { node: '>=18.0.0' },
+  input: { normExt: 'json配置文件' },
+  output: { normExt: 'gif 或 png' },
   rely: {
-    'sharp': '0.34.5',
-    "gif-encoder": "0.7.2",
+    sharp: '0.34.5',
+    'gif-encoder': '0.7.2'
   }
 };

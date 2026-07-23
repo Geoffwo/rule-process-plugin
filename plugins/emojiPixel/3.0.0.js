@@ -2,7 +2,6 @@ const sharp = require('sharp');
 const GIFEncoder = require('gif-encoder');
 const path = require('path');
 
-
 // ========== 工具函数 ==========
 const random = arr => arr[Math.floor(Math.random() * arr.length)];
 const weightRandom = (items) => {
@@ -15,15 +14,36 @@ const weightRandom = (items) => {
   return items[0].value;
 };
 
+// 深合并默认值（仅处理一层嵌套，此处足够）
+function deepDefaults(target, source) {
+  const result = { ...target };
+  for (const key in source) {
+    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      result[key] = deepDefaults(result[key] || {}, source[key]);
+    } else {
+      result[key] = source[key];
+    }
+  }
+  return result;
+}
+
 // ========== 默认参数 ==========
 const DEFAULTS = {
   blockSize: 12,
   logicWidth: 24,
   logicHeight: 28,
   count: 3,
+  outputFormat: 'gif',      // 'gif' 或 'png'
   gifFrameCount: 8,
   gifDelay: 80,
-  gifLoop: 0
+  gifLoop: 0,
+  animation: {
+    blink: true,           // 是否眨眼
+    blinkInterval: 6,      // 眨眼周期（帧）
+    blinkDuration: 2,      // 每次闭眼持续帧数
+    wave: true,            // 是否挥手
+    wavePath: 'arc'        // 挥手模式：'arc'（弧形）、'upDown'（上下）、'none'（关闭）
+  }
 };
 
 // ========== 配色库 ==========
@@ -57,7 +77,6 @@ const PALETTE = {
   bg: ['#F7F9FC', '#FFF5E6', '#F0F8FF', '#FFFAF0', '#F5F0FF', '#F0FFF4']
 };
 
-// 彩虹色阶
 const RAINBOW = [
   '#FF0000', '#FF7F00', '#FFFF00',
   '#00FF00', '#0000FF', '#4B0082', '#9400D3'
@@ -129,7 +148,7 @@ const ACCESSORIES = [
   }
 ];
 
-// ========== 生成单帧像素画布（含眨眼动画） ==========
+// ========== 生成单帧像素画布（可配置动画） ==========
 function generateFrame(config, baseData, frameIndex = 0) {
   const { logicWidth, logicHeight } = config;
   const {
@@ -138,15 +157,38 @@ function generateFrame(config, baseData, frameIndex = 0) {
     hairStyle, mouthStyle, accessory
   } = baseData;
 
+  // -------- 动画设置 ----------
+  const anim = config.animation || {};
+  const doBlink = anim.blink !== false;
+  const blinkInterval = anim.blinkInterval || 6;
+  const blinkDuration = anim.blinkDuration || 2;
+  const doWave = anim.wave !== false;
+  const waveMode = anim.wavePath || 'arc';
+
+  // 挥手路径
+  const ARC_PATH = [
+    [ 1,  1], [0, 0], [-1, -1], [-2, 0],
+    [-2,  1], [-1,  2], [0,  3], [ 1,  1]
+  ];
+  const UP_DOWN_PATH = [
+    [0, 0], [0, -1], [0, -2], [0, -1],
+    [0, 0], [0, 1],  [0, 2],  [0, 1]
+  ];
+  let wavePath = ARC_PATH;
+  if (waveMode === 'upDown') wavePath = UP_DOWN_PATH;
+  const [dx, dy] = doWave && waveMode !== 'none'
+      ? wavePath[frameIndex % wavePath.length]
+      : [0, 0];
+
+  // 初始化画布
   const pixels = Array.from({ length: logicHeight }, () => Array(logicWidth).fill(bgColor));
 
-  // 身体轮廓
+  // -------- 身体 --------
   const bodyOutline = [[5,17],[6,16],[17,16],[18,17],[4,18],[19,18],[4,19],[19,19],[5,20],[18,20],[6,21],[17,21]];
   bodyOutline.forEach(([x, y]) => {
     if (y >= 0 && y < logicHeight && x >= 0 && x < logicWidth) pixels[y][x] = PALETTE.stroke;
   });
 
-  // 身体主体
   for (let y = 17; y <= 21; y++) {
     let startX = 5, endX = 18;
     if (y === 21) startX = 6, endX = 17;
@@ -167,12 +209,21 @@ function generateFrame(config, baseData, frameIndex = 0) {
     if (y < logicHeight) pixels[y][x] = skin;
   });
 
-  // 手
-  [[3,18],[4,18],[3,19],[4,19],[19,18],[20,18],[19,19],[20,19]].forEach(([x, y]) => {
-    if (y < logicHeight) pixels[y][x] = skin;
+  // -------- 手（左手固定，右手可挥手） --------
+  const leftHand = [[3,18],[4,18],[3,19],[4,19]];
+  const rightHandBase = [[19,18],[20,18],[19,19],[20,19]];
+
+  leftHand.forEach(([x, y]) => {
+    if (y < logicHeight && x < logicWidth) pixels[y][x] = skin;
+  });
+  rightHandBase.forEach(([x, y]) => {
+    const nx = x + dx, ny = y + dy;
+    if (nx >= 0 && nx < logicWidth && ny >= 0 && ny < logicHeight) {
+      pixels[ny][nx] = skin;
+    }
   });
 
-  // 腿
+  // -------- 腿 --------
   [[7,22],[8,22],[14,22],[15,22],[7,23],[8,23],[14,23],[15,23]].forEach(([x, y]) => {
     if (y < logicHeight) pixels[y][x] = PALETTE.stroke;
   });
@@ -186,7 +237,7 @@ function generateFrame(config, baseData, frameIndex = 0) {
     if (y < logicHeight) pixels[y][x] = PALETTE.stroke;
   });
 
-  // 头部轮廓
+  // -------- 头部轮廓 --------
   const headOutline = [[5,4],[6,3],[7,3],[8,3],[9,3],[10,3],[11,3],[12,3],[13,3],[14,3],[15,3],[16,3],[17,3],[18,4],[4,5],[19,5],[4,6],[19,6],[4,7],[19,7],[4,8],[19,8],[4,9],[19,9],[4,10],[19,10],[4,11],[19,11],[4,12],[19,12],[4,13],[19,13],[4,14],[19,14],[5,15],[18,15],[6,16],[17,16],[7,17],[16,17]];
   headOutline.forEach(([x, y]) => {
     if (y >= 0 && y < logicHeight && x >= 0 && x < logicWidth) pixels[y][x] = PALETTE.stroke;
@@ -202,7 +253,7 @@ function generateFrame(config, baseData, frameIndex = 0) {
   for (let y = 7; y <= 15; y++) pixels[y][18] = skinDark;
   for (let x = 8; x <= 15; x++) pixels[16][x] = skinDark;
 
-  // 发型
+  // -------- 发型（支持传奇彩虹流动） --------
   hairStyle.outline.forEach(([x, y]) => {
     if (y >= 0 && y < logicHeight && x >= 0 && x < logicWidth) pixels[y][x] = PALETTE.stroke;
   });
@@ -231,21 +282,19 @@ function generateFrame(config, baseData, frameIndex = 0) {
     });
   }
 
-  // ===== 眼睛（添加眨眼动画） =====
-  const isBlink = (frameIndex % 2 === 0); // 偶数帧睁眼，奇数帧闭眼
-
+  // -------- 眼睛（可配置眨眼） --------
+  const isBlink = doBlink && (frameIndex % blinkInterval >= blinkInterval - blinkDuration);
   if (isBlink) {
-    // 睁眼（原逻辑）
+    // 闭眼
+    [[7,10],[7,11],[16,10],[16,11]].forEach(([x, y]) => pixels[y][x] = skin);
+    [[8,10],[9,10],[8,11],[9,11],[14,10],[15,10],[14,11],[15,11]].forEach(([x, y]) => pixels[y][x] = skin);
+    [[7,10],[8,10],[9,10],[14,10],[15,10],[16,10]].forEach(([x, y]) => pixels[y][x] = '#2D2D2D');
+  } else {
+    // 睁眼
     [[7,10],[7,11],[16,10],[16,11]].forEach(([x, y]) => pixels[y][x] = '#FFFFFF');
     [[8,10],[9,10],[8,11],[9,11],[14,10],[15,10],[14,11],[15,11]].forEach(([x, y]) => pixels[y][x] = eyeColor);
     pixels[10][8] = '#FFFFFF';
     pixels[10][14] = '#FFFFFF';
-  } else {
-    // 闭眼：用肤色覆盖，画一条深色线（睫毛）
-    [[7,10],[7,11],[16,10],[16,11]].forEach(([x, y]) => pixels[y][x] = skin);
-    [[8,10],[9,10],[8,11],[9,11],[14,10],[15,10],[14,11],[15,11]].forEach(([x, y]) => pixels[y][x] = skin);
-    // 画一条深色线表示闭眼
-    [[7,10],[8,10],[9,10],[14,10],[15,10],[16,10]].forEach(([x, y]) => pixels[y][x] = '#2D2D2D');
   }
 
   // 嘴型
@@ -268,7 +317,7 @@ function generateFrame(config, baseData, frameIndex = 0) {
 }
 
 // ========== 生成基础人物数据 ==========
-function generateBaseAvatar(config) {
+function generateBaseAvatar() {
   const rarity = weightRandom(RARITY);
   const skinIdx = Math.floor(Math.random() * PALETTE.skin.length);
   const skin = PALETTE.skin[skinIdx];
@@ -306,7 +355,7 @@ function generateBaseAvatar(config) {
   };
 }
 
-// ========== 渲染单帧 Buffer（修复 composite input） ==========
+// ========== 渲染单帧为 PNG Buffer ==========
 async function renderFrameBuffer(pixels, config) {
   const { blockSize, logicWidth, logicHeight } = config;
   const w = logicWidth * blockSize;
@@ -315,7 +364,6 @@ async function renderFrameBuffer(pixels, config) {
   const composites = [];
   for (let y = 0; y < logicHeight; y++) {
     for (let x = 0; x < logicWidth; x++) {
-      // 生成纯色像素块的 Buffer 作为复合输入
       const tileBuffer = await sharp({
         create: {
           width: blockSize,
@@ -342,26 +390,23 @@ async function renderFrameBuffer(pixels, config) {
       .toBuffer();
 }
 
-// ========== 合成 GIF（兼容 sharp 0.34.5） ==========
+// ========== 合成 GIF（使用 gif-encoder） ==========
 async function composeGif(frames, config) {
   const { gifDelay, gifLoop, logicWidth, logicHeight, blockSize } = config;
   const width = logicWidth * blockSize;
   const height = logicHeight * blockSize;
 
-  // 1. 用 sharp 将第一帧转为 raw RGBA 像素，获取尺寸
   const firstFramePixels = await sharp(frames[0])
       .ensureAlpha()
       .raw()
       .toBuffer();
 
-  // 2. 初始化 GIF 编码器
   const encoder = new GIFEncoder(width, height);
-  encoder.setQuality(10);           // 颜色量化质量，越高越清晰但慢
+  encoder.setQuality(10);
   encoder.setDelay(gifDelay);
   encoder.setRepeat(gifLoop);
   encoder.writeHeader();
 
-  // 3. 逐帧添加
   encoder.addFrame(firstFramePixels);
   for (let i = 1; i < frames.length; i++) {
     const pixels = await sharp(frames[i])
@@ -371,21 +416,28 @@ async function composeGif(frames, config) {
     encoder.addFrame(pixels);
   }
 
-  // 4. 完成编码
   encoder.finish();
   return encoder.read();
 }
 
-// ========== 默认配置模板 ==========
+// ========== 生成配置模板 ==========
 function createConfigTemplate() {
   return {
     blockSize: 12,
     logicWidth: 24,
     logicHeight: 28,
     count: 6,
+    outputFormat: 'gif',
     gifFrameCount: 8,
     gifDelay: 80,
-    gifLoop: 0
+    gifLoop: 0,
+    animation: {
+      blink: true,
+      blinkInterval: 6,
+      blinkDuration: 2,
+      wave: true,
+      wavePath: 'arc'
+    }
   };
 }
 
@@ -403,50 +455,80 @@ async function writingRules(inputArray, outputNodeTemplate) {
     ];
   }
 
-  const config = { ...DEFAULTS, ...JSON.parse(configFile.content) };
+  // 深合并默认配置和用户配置
+  const userConfig = JSON.parse(configFile.content);
+  const config = deepDefaults(DEFAULTS, userConfig);
+
   const results = [];
   const summary = [];
+  const outputFormat = config.outputFormat || 'gif';   // 支持 'png' 或 'gif'
 
   for (let i = 1; i <= config.count; i++) {
-    const baseData = generateBaseAvatar(config);
+    const baseData = generateBaseAvatar();
     const fileName = `avatar_${i}_${Math.random().toString(36).slice(2, 10)}`;
 
-    // 生成所有帧
-    const frameBuffers = [];
-    for (let f = 0; f < config.gifFrameCount; f++) {
-      const framePixels = generateFrame(config, baseData, f);  // f 作为帧索引
-      const buf = await renderFrameBuffer(framePixels, config);
-      frameBuffers.push(buf);
+    if (outputFormat === 'png') {
+      // 静态图：生成一帧（默认睁眼、不挥手，通过 frameIndex=0 控制；彩虹头发也会显示第一帧颜色）
+      const staticFrameIndex = 0;  // 可配置，但这里默认 0
+      const framePixels = generateFrame(config, baseData, staticFrameIndex);
+      const pngBuffer = await renderFrameBuffer(framePixels, config);
+
+      results.push({
+        ...outputNodeTemplate,
+        fileName,
+        normExt: 'png',
+        content: pngBuffer
+      });
+
+      summary.push({
+        index: i,
+        file: `${fileName}.png`,
+        rarity: baseData.rarity,
+        hair: baseData.hairStyle.name,
+        mouth: baseData.mouthStyle.name,
+        accessory: baseData.accessory?.name || null
+      });
+
+      console.log(`生成静态头像 ${i}/${config.count} | 稀有度:${baseData.rarity}${baseData.accessory ? ' | 配饰:' + baseData.accessory.name : ''}`);
+    } else {
+      // 动态 GIF
+      const frameBuffers = [];
+      for (let f = 0; f < config.gifFrameCount; f++) {
+        const framePixels = generateFrame(config, baseData, f);
+        const buf = await renderFrameBuffer(framePixels, config);
+        frameBuffers.push(buf);
+      }
+
+      const gifBuffer = await composeGif(frameBuffers, config);
+
+      results.push({
+        ...outputNodeTemplate,
+        fileName,
+        normExt: 'gif',
+        content: gifBuffer
+      });
+
+      summary.push({
+        index: i,
+        file: `${fileName}.gif`,
+        rarity: baseData.rarity,
+        hair: baseData.hairStyle.name,
+        mouth: baseData.mouthStyle.name,
+        accessory: baseData.accessory?.name || null
+      });
+
+      console.log(`生成动态头像 ${i}/${config.count} | 稀有度:${baseData.rarity}${baseData.accessory ? ' | 配饰:' + baseData.accessory.name : ''}`);
     }
-
-    // 合成GIF
-    const gifBuffer = await composeGif(frameBuffers, config);
-
-    results.push({
-      ...outputNodeTemplate,
-      fileName,
-      normExt: 'gif',
-      content: gifBuffer
-    });
-
-    summary.push({
-      index: i,
-      file: `${fileName}.gif`,
-      rarity: baseData.rarity,
-      hair: baseData.hairStyle.name,
-      mouth: baseData.mouthStyle.name,
-      accessory: baseData.accessory?.name || null
-    });
-
-    console.log(`生成动态头像 ${i}/${config.count} | 稀有度:${baseData.rarity}${baseData.accessory ? ' | 配饰:' + baseData.accessory.name : ''}`);
   }
 
+  // 生成汇总 JSON
   results.push({
     ...outputNodeTemplate,
     fileName: 'avatar_summary',
     normExt: 'json',
     content: JSON.stringify({
       total: config.count,
+      format: outputFormat,
       generatedAt: new Date().toLocaleString(),
       avatars: summary
     }, null, 2)
@@ -457,20 +539,20 @@ async function writingRules(inputArray, outputNodeTemplate) {
 
 module.exports = {
   name: 'emojiPixel',
-  version: '2.0.0',
+  version: '3.0.0',
   process: writingRules,
-  description: '全部品级输出GIF，传奇头发彩虹流光，所有角色眨眼动画',
+  description: '像素头像生成器，支持动态 GIF（眨眼/挥手）和静态 PNG，传奇品质彩虹头发',
   notes: {
-    node: '18.20.4'
+    node: '>=18.0.0'
   },
   input: {
     normExt: 'json配置文件'
   },
   output: {
-    normExt: 'gif'
+    normExt: 'gif 或 png'
   },
   rely: {
-    'sharp': '0.34.5',
-    "gif-encoder": "0.7.2",
+    sharp: '0.34.5',
+    'gif-encoder': '0.7.2'
   }
 };
