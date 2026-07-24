@@ -106,10 +106,10 @@ function uploadFile(sshConfig, localPath, remotePath) {
  * @param {string} sudoPwd
  * @param {string} workDir
  * @param {string} cmd
- * @param {number} timeout 超时毫秒，默认30秒
+ * @param {number} timeout 超时毫秒，默认300秒
  * @returns {Promise<{output:string, error:string}>}
  */
-function runRemoteCmd(sshConfig, sudoPwd, workDir, cmd, timeout = 30000) {
+function runRemoteCmd(sshConfig, sudoPwd, workDir, cmd, timeout = 300000) {
   return new Promise((resolve, reject) => {
     const conn = new Client();
     let output = "";
@@ -122,7 +122,7 @@ function runRemoteCmd(sshConfig, sudoPwd, workDir, cmd, timeout = 30000) {
       timer = setTimeout(() => {
         conn.end();
         resolve({
-          output: output + "\n[提示] 30s内无日志输出，主动断开连接",
+          output: output + "\n[提示] 300s内无日志输出，主动断开连接",
           error: error
         });
       }, timeout);
