@@ -47,16 +47,38 @@ async function crawlPage(page) {
   }
 }
 
+/**
+ * 生成一个不会重复的文件名
+ * @returns {string}
+ */
+function getUniqueFileName() {
+  const prefix = 'result'
+  const now = new Date();
+  const pad = n => n.toString().padStart(2, '0');
+  const dateStr = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const randomStr = Math.random().toString(36).slice(2, 6); // 6位随机字符串
+  return `${prefix}_${dateStr}_${randomStr}`;
+}
+
 // 主处理函数 - 爬取所有页面
-async function writingRules(inputArray, outputNodeTemplate) {
-  const allMovies = [];
+async function* writingRules(inputArray, outputNodeTemplate) {
   const totalPages = 10; // 总共10页
 
   try {
     // 循环爬取所有页面
     for (let page = 1; page <= totalPages; page++) {
       const pageData = await crawlPage(page);
-      allMovies.push(...pageData);
+
+      // 构造当前页的outputNode（改为追加模式：仅包含当前页数据，方便后续追加写入文件）
+      const outputNode = {
+        ...outputNodeTemplate,
+        fileName: getUniqueFileName(),
+        normExt: 'json',
+        content: JSON.stringify(pageData, null, 2), // 仅序列化当前页数据，而非所有数据
+      };
+
+      // 按页面导出：产出当前页的outputNode数组（保持原有返回格式一致）
+      yield [outputNode];
 
       // 非最后一页时添加延迟，避免请求过于频繁被反爬
       if (page < totalPages) {
@@ -64,29 +86,22 @@ async function writingRules(inputArray, outputNodeTemplate) {
       }
     }
 
-    console.log(`✅ 所有页面爬取完成，共获取${allMovies.length}条电影数据`);
+    console.log(`所有页面爬取并迭代产出完成，共${totalPages}页`);
   } catch (error) {
-    console.error('❌ 整体爬取过程出错:', error.message);
+    console.error('整体爬取过程出错:', error.message);
+    // 出错时产出空数据，保证迭代不中断
+    yield [{ ...outputNodeTemplate, content: `整体爬取过程出错:${error.message}`}];
   }
-
-  const outputNode = {
-    ...outputNodeTemplate,
-    fileName: 'douban_top250_results',
-    normExt: 'json',
-    content: JSON.stringify(allMovies, null, 2)
-  };
-
-  return [outputNode];
 }
 
 // module.exports = writingRules;
 
 module.exports = {
-  name: 'crawler',
-  version: '1.0.0',
+  name: 'crawler2douban',
+  version: '1.0.1',
   process: writingRules,
   disable: true,
-  description: '获取豆瓣电影Top250榜单数据，包括电影名称、评分、短评、详情链接和海报地址', // 准确描述功能
+  description: '获取豆瓣电影Top250榜单数据，包括电影名称、评分、短评、详情链接和海报地址(使用迭代生成器逐步生成，减少内存)', // 准确描述功能
   notes: {
     node: '18.20.4', // 明确支持的Node版本
   },

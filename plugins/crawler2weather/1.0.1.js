@@ -151,8 +151,8 @@ function writeExcel(jsonData,outputPath){
 }
 
 module.exports = {
-  name: 'crawler',
-  version: '2.0.1',
+  name: 'crawler2weather',
+  version: '1.0.1',
   process: writingRules,
   disable: true,
   description: '获取历史天气数据，包括日期、天气状况、气温、风力风向的excel数据', // 准确描述功能
