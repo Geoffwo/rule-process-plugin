@@ -108,6 +108,8 @@ rule-process-plugin/
 | translation | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/translation/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/translation/1.0.0.js) |
 | txt2audio | 1.1.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/txt2audio/1.1.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/txt2audio/1.1.0.js) |
 | txt2audio | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/txt2audio/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/txt2audio/1.0.0.js) |
+| txt2img | 1.0.4 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/txt2img/1.0.4.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/txt2img/1.0.4.js) |
+| txt2img | 1.0.3 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/txt2img/1.0.3.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/txt2img/1.0.3.js) |
 | txt2img | 1.0.2 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/txt2img/1.0.2.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/txt2img/1.0.2.js) |
 | txt2img | 1.0.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/txt2img/1.0.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/txt2img/1.0.1.js) |
 | txt2img | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/txt2img/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/txt2img/1.0.0.js) |
