@@ -519,6 +519,14 @@
       }
     }
   },
+  "url2png": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/url2png/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/url2png/1.0.0.js"
+      }
+    }
+  },
   "xlsx2json": {
     "versions": {
       "1.0.0": {
