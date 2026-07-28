@@ -67,6 +67,7 @@ rule-process-plugin/
 | generateJavaMode | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/generateJavaMode/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/generateJavaMode/1.0.0.js) |
 | generateJsMode | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/generateJsMode/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/generateJsMode/1.0.0.js) |
 | html2js | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/html2js/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/html2js/1.0.0.js) |
+| html2png | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/html2png/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/html2png/1.0.0.js) |
 | img2audio | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/img2audio/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/img2audio/1.0.0.js) |
 | img2format | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/img2format/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/img2format/1.0.0.js) |
 | img2img | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/img2img/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/img2img/1.0.0.js) |
