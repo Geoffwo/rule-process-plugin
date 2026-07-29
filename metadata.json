@@ -64,6 +64,10 @@
       "1.0.0": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/browser2auto/1.0.0.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/browser2auto/1.0.0.js"
+      },
+      "2.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/browser2auto/2.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/browser2auto/2.0.0.js"
       }
     }
   },
@@ -296,6 +300,14 @@
       "1.0.0": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/img2img/1.0.0.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/img2img/1.0.0.js"
+      },
+      "1.0.1": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/img2img/1.0.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/img2img/1.0.1.js"
+      },
+      "1.0.2": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/img2img/1.0.2.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/img2img/1.0.2.js"
       }
     }
   },
