@@ -59,6 +59,14 @@
       }
     }
   },
+  "browser2auto": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/browser2auto/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/browser2auto/1.0.0.js"
+      }
+    }
+  },
   "crawler2douban": {
     "versions": {
       "1.0.0": {
@@ -516,6 +524,14 @@
       "1.0.4": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/txt2img/1.0.4.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/txt2img/1.0.4.js"
+      }
+    }
+  },
+  "url2png": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/url2png/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/url2png/1.0.0.js"
       }
     }
   },

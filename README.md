@@ -31,6 +31,7 @@ rule-process-plugin/
 | batch2api | 1.1.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/batch2api/1.1.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/batch2api/1.1.1.js) |
 | batch2api | 1.1.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/batch2api/1.1.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/batch2api/1.1.0.js) |
 | batch2api | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/batch2api/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/batch2api/1.0.0.js) |
+| browser2auto | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/browser2auto/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/browser2auto/1.0.0.js) |
 | crawler2douban | 1.1.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/crawler2douban/1.1.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/crawler2douban/1.1.1.js) |
 | crawler2douban | 1.1.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/crawler2douban/1.1.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/crawler2douban/1.1.0.js) |
 | crawler2douban | 1.0.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/crawler2douban/1.0.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/crawler2douban/1.0.1.js) |
@@ -115,6 +116,7 @@ rule-process-plugin/
 | txt2img | 1.0.2 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/txt2img/1.0.2.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/txt2img/1.0.2.js) |
 | txt2img | 1.0.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/txt2img/1.0.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/txt2img/1.0.1.js) |
 | txt2img | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/txt2img/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/txt2img/1.0.0.js) |
+| url2png | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/url2png/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/url2png/1.0.0.js) |
 | xlsx2json | 1.0.2 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/xlsx2json/1.0.2.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/xlsx2json/1.0.2.js) |
 | xlsx2json | 1.0.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/xlsx2json/1.0.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/xlsx2json/1.0.1.js) |
 | xlsx2json | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/xlsx2json/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/xlsx2json/1.0.0.js) |
