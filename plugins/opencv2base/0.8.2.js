@@ -41,22 +41,35 @@ async function writingRules(inputArray, outputNodeTemplate) {
 
       console.log(`图片信息：${pngFile.path} | 宽：${width} | 高：${height} | 通道：${channels}`);
 
-      // 1. 转 HSV 并生成红色掩膜
+      // 1. 转 HSV
       const hsv = bgrImg.cvtColor(cv.COLOR_BGR2HSV);
+      const [h, s, v] = hsv.splitChannels();//获取三通道
+
+      // 2. 创建红色掩码
       const mask1 = hsv.inRange(lower1, upper1);
       const mask2 = hsv.inRange(lower2, upper2);
-      const colorMask = mask1.bitwiseOr(mask2); // 合并两个红色区间
+      const redMask = mask1.bitwiseOr(mask2);// 合并两个红色区间
 
-      // 5. 将掩码与原图叠加，只显示红色区域
-      //bitwiseAnd 是 OpenCV 中用于对 两个相同尺寸、相同类型的 Mat（图像矩阵） 执行按位与操作的函数。但你的 colorMask 是一个 单通道（灰度）的二值掩码（0 或 255），而 bgrImg 是一个 三通道 BGR 图像
-      // const redResult = bgrImg.bitwiseAnd(colorMask);
+      // 3. 增强红色区域的饱和度（S）和/或明度（V）
+      const sEnhanced = s.mul(1.2);// 饱和度增强系数（>1 更鲜艳）
+      const vEnhanced = v.mul(1.1);// 明度增强系数（>1 更亮）
 
-      //使用了 bitwiseAnd（按位与），而掩码 colorMask 中 非红色区域为 0（黑色），所以这些区域在与原图做 bitwiseAnd 后变成 全黑（0,0,0）
-      const redResult = bgrImg.bitwiseAnd(new cv.Mat([colorMask, colorMask, colorMask]));
+      // 4. 使用掩码：只在红色区域应用增强
+      const sFinal = s.copy();
+      const vFinal = v.copy();
+
+      sEnhanced.copyTo(sFinal, redMask);//在redMask部分，将sEnhanced拷到sFinal
+      vEnhanced.copyTo(vFinal, redMask);
+
+      // 5. 合并增强后的 HSV
+      const enhancedHsv = new cv.Mat([h, sFinal, vFinal]);
+
+      // 6. 转回 BGR
+      const enhancedBgr = enhancedHsv.cvtColor(cv.COLOR_HSV2BGR);
 
       // 6. 保存处理后的图片（官方imwriteAsync）
       const outputPath = path.join(outputNodeTemplate.path, 'opencv08.png')
-      await cv.imwriteAsync(outputPath, redResult);
+      await cv.imwriteAsync(outputPath, enhancedBgr);
       console.log(`在图片上绘制图形已保存`);
 
       content.push({
@@ -82,10 +95,10 @@ async function writingRules(inputArray, outputNodeTemplate) {
 }
 
 module.exports = {
-  name: 'opencv',
-  version: '0.8.1',
+  name: 'opencv2base',
+  version: '0.8.0',
   process: writingRules,
-  description: 'opencv基础：保留红色，其余变黑（bitwiseAnd（按位与）运算规则是除了掩码区域，其余部分置0，也就是黑色）',
+  description: 'opencv基础：增强红色区域（基于HSV，仅强化红色，其余不变）',
   notes: {
     node: '18.20.4',
     msg:'0.x.x代表学习分支，实际插件价值偏低',

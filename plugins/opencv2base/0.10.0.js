@@ -31,41 +31,44 @@ async function writingRules(inputArray, outputNodeTemplate) {
 
       console.log(`图片信息：${pngFile.path} | 宽：${width} | 高：${height} | 通道：${channels}`);
 
-      //RGB 图像 → 滤波降噪 → 转换为 HSV 空间 → 颜色阈值筛选（得到灰度掩码） → 二值化 → 形态学优化 → 轮廓检测
+      // ==================== 形态学处理 ====================
+      // 1. 生成一个“脏”的红色掩膜
+      const hsv = bgrImg.cvtColor(cv.COLOR_BGR2HSV);
+      const mask1 = hsv.inRange(new cv.Vec(0, 50, 100), new cv.Vec(10, 255, 255));
+      const mask2 = hsv.inRange(new cv.Vec(170, 50, 100), new cv.Vec(180, 255, 255));
+      const noisyRedMask = mask1.bitwiseOr(mask2);
 
-      // ==================== 滤波降噪 ====================
-      const bilateralBlur = bgrImg.bilateralFilter(9, 75, 75);// 双边滤波（降噪同时保留边缘，适合彩色图）
+      // 2. 创建结构元素（椭圆，5x5）
+      const kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, new cv.Size(5, 5));
 
-      // ==================== 颜色分割 ====================
-      const hsv = bilateralBlur.cvtColor(cv.COLOR_BGR2HSV);
-      const mask1 = hsv.inRange(new cv.Vec(0, 30, 30), new cv.Vec(10, 255, 255));
-      const mask2 = hsv.inRange(new cv.Vec(170, 30, 30), new cv.Vec(180, 255, 255));
-      const noisyRedMask = mask1.bitwiseOr(mask2);//生成一个“脏”的红色掩膜
-
-      // ==================== 形态学优化 ====================
-      const kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, new cv.Size(5, 5));//创建结构元素
+      // 3. 【关键修正】使用 Mat.prototype.morphologyEx
       const cleanRedMask = noisyRedMask.morphologyEx(kernel,cv.MORPH_OPEN);   // 去噪 cv.MORPH_OPEN 开运算 先腐蚀 → 后膨胀
       const finalMask = cleanRedMask.morphologyEx(kernel,cv.MORPH_CLOSE);     // 填洞 cv.MORPH_CLOSE 闭运算 先膨胀 → 后腐蚀
 
-      // ==================== 轮廓检测====================
-      const contourInput = finalMask.copy(); // 安全起见
-      const contours = contourInput.findContours(cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+      // ==================== 轮廓检测开始 ====================
+
+      // 1. 查找轮廓（只找最外层轮廓，简化结构）
+      //findContours：查找轮廓函数
+      //第一个参数：轮廓检索模式
+      // cv.RETR_EXTERNAL	只检测最外层轮廓（忽略所有内部孔洞）	你只想找“物体整体”，比如一个红苹果（不管它有没有核）
+      // cv.RETR_LIST	检测所有轮廓，不建立层级关系	快速获取所有边缘，不在乎内外
+      // cv.RETR_TREE	检测所有轮廓，并构建完整的嵌套树结构（父-子关系）	需要区分“外框”和“内孔”（比如字母 O 有两个轮廓）
+      //第二个参数：轮廓近似方法
+      // cv.CHAIN_APPROX_NONE	保存轮廓上每一个像素点	精确但数据量大（一条直线存 100 个点）
+      // cv.CHAIN_APPROX_SIMPLE	压缩冗余点，只保留关键点（如直线只存两端）	节省内存，加速后续计算
+      // const contours = noisyRedMask.findContours(cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE);//不使用形态学处理的结果测试
+      const contours = finalMask.findContours(cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE);
 
       // 2. 复制原图用于绘制（避免修改原始 bgrImg）
       const imgWithContours = bgrImg.copy();
-
-      // 基于图像总面积的百分比
-      const imageArea = width * height;
-      const minAreaRatio = 0.001; // 0.1%，可根据效果调整为 0.0005 ～ 0.005
-      const minArea = imageArea * minAreaRatio;
 
       // 3. 遍历每个轮廓，过滤小面积，并绘制边界框
       let objectCount = 0;
       contours.forEach(contour => {
         const area = contour.area; // 计算轮廓包围的像素面积
 
-        // 自动过滤小区域
-        if (area < minArea) {
+        // 过滤掉面积小于 200 像素的“噪点”
+        if (area < 200) {
           return; // 跳过
         }
 
@@ -78,18 +81,13 @@ async function writingRules(inputArray, outputNodeTemplate) {
 
         // 在图上绘制绿色矩形框（B=0, G=255, R=0）
         imgWithContours.drawRectangle(pt1, pt2, new cv.Vec(0, 255, 0), 2);
+
+        // （可选）在框上方显示面积
+        // imgWithContours.putText(`Area: ${Math.round(area)}`, pt1, cv.FONT_HERSHEY_SIMPLEX, 0.5, new cv.Vec(0, 255, 0), 1);
       });
 
       // 6. 保存过程图片
-      const outputPath_bilateralBlur = path.join(outputNodeTemplate.path, 'opencv01_bilateralBlur.png')
-      const outputPath_noisyRedMask = path.join(outputNodeTemplate.path, 'opencv01_noisyRedMask.png')
-      const outputPath_cleanRedMask = path.join(outputNodeTemplate.path, 'opencv01_cleanRedMask.png')
-      const outputPath_finalMask = path.join(outputNodeTemplate.path, 'opencv01_finalMask.png')
-      const outputPath = path.join(outputNodeTemplate.path, 'opencv01.png')
-      await cv.imwriteAsync(outputPath_bilateralBlur, bilateralBlur);
-      await cv.imwriteAsync(outputPath_noisyRedMask, noisyRedMask);
-      await cv.imwriteAsync(outputPath_cleanRedMask, cleanRedMask);
-      await cv.imwriteAsync(outputPath_finalMask, finalMask);
+      const outputPath = path.join(outputNodeTemplate.path, 'opencv10.png')
       await cv.imwriteAsync(outputPath, imgWithContours);
       console.log(`在图片上绘制图形已保存`);
 
@@ -112,14 +110,14 @@ async function writingRules(inputArray, outputNodeTemplate) {
     }
   }
 
-  return [{...outputNodeTemplate,fileName: 'opencv01',normExt: 'json',content:JSON.stringify(content, null, 2)}];
+  return [{...outputNodeTemplate,fileName: 'opencv10',normExt: 'json',content:JSON.stringify(content, null, 2)}];
 }
 
 module.exports = {
-  name: 'opencv',
-  version: '1.0.0',
+  name: 'opencv2base',
+  version: '0.10.0',
   process: writingRules,
-  description: 'opencv系统化红色区域检测',
+  description: 'opencv基础：轮廓检测,并使用绿色边框标注',
   notes: {
     node: '18.20.4',
     msg:'0.x.x代表学习分支，实际插件价值偏低',

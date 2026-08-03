@@ -97,7 +97,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
 }
 
 module.exports = {
-  name: 'opencv',
+  name: 'opencv2base',
   version: '0.6.1',
   process: writingRules,
   description: 'opencv基础：反色图（灰度图取反）',

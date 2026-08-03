@@ -12,35 +12,53 @@ async function writingRules(inputArray, outputNodeTemplate) {
     const height = 200;
 
     // 创建一个 300x200 的蓝色图片
-    // 创建Mat对象：300x200，8位无符号3通道，BGR颜色(255,0,0)是纯蓝色
-    const image = new cv.Mat(height, width, cv.CV_8UC3, [255, 0, 0]);
+    // 创建一个空白的Mat对象：300x200，8位无符号3通道（BGR）
+    const image = new cv.Mat(height, width, cv.CV_8UC3);
+
+    // 3. 逐像素计算渐变颜色并赋值（核心逻辑）
+    for (let y = 0; y < height; y++) {  // 遍历高度（行）
+        for (let x = 0; x < width; x++) {  // 遍历宽度（列）
+            // 计算当前x位置的BGR分量（水平渐变：B从255→0，R从0→255，G固定0）
+            const blue = Math.floor((width - x) * 255 / width);   // 蓝分量
+            const green = 0;                                    // 绿分量
+            const red = Math.floor(x * 255 / width);             // 红分量
+
+            // 用官方cv.Vec构造颜色向量（符合文档Vector示例）
+            const colorVec = new cv.Vec(blue, green, red);
+
+            // 方式A：用Mat.set赋值（官方推荐的像素设置方式）
+            image.set(y, x, colorVec);
+
+            // 方式B：用Mat.at获取后赋值（备选，部分版本兼容）
+            // gradientMat.at(y, x).set(blue, green, red);
+        }
+    }
 
     console.log('图片创建成功！');
     console.log('图片宽度:', image.cols, '像素');
     console.log('图片高度:', image.rows, '像素');
     console.log('颜色通道:', image.channels, '个通道');
-    console.log('(3个通道是彩色图片，1个通道是黑白图片)');
 
+    // 显示图片
+    cv.imshow('Gradient Image', image); // 新窗口名为 "Gradient Image"
+    console.log('图片现在应该在新窗口中显示');
 
-    // 获取(0,0)位置像素的颜色值
-    const pixelColor = image.at(0, 0); // 或者使用 image.at<Vec3b>(0, 0)
-    console.log('第一个像素的颜色:',pixelColor);
-    console.log('蓝色分量:', pixelColor.x, '(B)'); // 应该输出 255
-    console.log('绿色分量:', pixelColor.y, '(G)'); // 应该输出 0
-    console.log('红色分量:', pixelColor.z, '(R)'); // 应该输出 0
+    // 等待用户按键
+    cv.waitKey(); // 按任意键继续执行后续代码或关闭程序
+    cv.destroyAllWindows();
 
     // 保存图片
-    const outputPath = path.join(outputNodeTemplate.path, 'opencv02.jpg')
+    const outputPath = path.join(outputNodeTemplate.path, 'opencv03.jpg')
     cv.imwrite(outputPath, image);
 
-    return [{...outputNodeTemplate,fileName: 'opencv02',content:'蓝色图片创建成功'}];
+    return [{...outputNodeTemplate,fileName: 'opencv03',content:'蓝色图片创建成功'}];
 }
 
 module.exports = {
-    name: 'opencv',
-    version: '0.2.0',
+    name: 'opencv2base',
+    version: '0.3.0',
     process: writingRules,
-    description: 'opencv基础：创建一张简单的蓝色测试图片，并保存到指定路径',
+    description: 'opencv基础：创建一张简单的渐变色测试图片，弹窗显示，并保存到指定路径',
     notes: {
         node: '18.20.4',
         msg:'0.0.x代表学习分支，实际插件价值偏低',

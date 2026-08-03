@@ -74,13 +74,19 @@ async function writingRules(inputArray, outputNodeTemplate) {
 
         objectCount++;
 
-        // 计算轮廓的边界矩形（bounding box）
-        const rect = contour.boundingRect();
-        const pt1 = new cv.Point(rect.x, rect.y);
-        const pt2 = new cv.Point(rect.x + rect.width, rect.y + rect.height);
+        // ---- 最小外接旋转矩形 ----
+        // 1. 获取旋转矩形信息（中心point、尺寸size、旋转角度angle）
+        const rotatedRect = contour.minAreaRect();
 
-        // 在图上绘制绿色矩形框（B=0, G=255, R=0）
-        imgWithContours.drawRectangle(pt1, pt2, new cv.Vec(0, 255, 0), 2);
+        // 2. 提取旋转矩形的4个顶点
+        const rectPoints = getRotatedRectPoints(rotatedRect);
+
+        // 3. 绘制旋转矩形（蓝色线条）
+        for (let i = 0; i < 4; i++) {
+          const pt1 = rectPoints[i];
+          const pt2 = rectPoints[(i + 1) % 4];
+          imgWithContours.drawLine(pt1, pt2, new cv.Vec(255, 0, 0), 2); // BGR: 蓝色
+        }
 
         // （可选）在框上方显示面积
         // imgWithContours.putText(`Area: ${Math.round(area)}`, pt1, cv.FONT_HERSHEY_SIMPLEX, 0.5, new cv.Vec(0, 255, 0), 1);
@@ -113,11 +119,45 @@ async function writingRules(inputArray, outputNodeTemplate) {
   return [{...outputNodeTemplate,fileName: 'opencv10',normExt: 'json',content:JSON.stringify(content, null, 2)}];
 }
 
+function getRotatedRectPoints(rotatedRect) {
+  const { center, size, angle } = rotatedRect;
+
+  // 获取矩形的中心和原始尺
+  const cx = center.x;
+  const cy = center.y;
+  const w = size.width;
+  const h = size.height;
+
+  // 半宽半高
+  const cosA = Math.cos(angle * Math.PI / 180);
+  const sinA = Math.sin(angle * Math.PI / 180);
+
+  // 四个相对于中心的偏移向量（未旋转前）
+  const dx1 = w / 2;
+  const dy1 = h / 2;
+
+  // 旋转后的四个角点（相对于中心）
+  const pts = [
+    [ dx1,  dy1],
+    [-dx1,  dy1],
+    [-dx1, -dy1],
+    [ dx1, -dy1]
+  ].map(([x, y]) => {
+    // 应用旋转变换
+    // 二维平面上绕原点逆时针旋转一个点的标准公式 （数学公式忘干净了，暂时看不懂这里）
+    const rx = x * cosA - y * sinA;
+    const ry = x * sinA + y * cosA;
+    return new cv.Point(cx + rx, cy + ry);
+  });
+
+  return pts; // 返回 cv.Point 数组
+}
+
 module.exports = {
-  name: 'opencv',
-  version: '0.10.0',
+  name: 'opencv2base',
+  version: '0.10.1',
   process: writingRules,
-  description: 'opencv基础：轮廓检测,并使用绿色边框标注',
+  description: 'opencv基础：轮廓检测,并使用蓝色旋转边框标注',
   notes: {
     node: '18.20.4',
     msg:'0.x.x代表学习分支，实际插件价值偏低',

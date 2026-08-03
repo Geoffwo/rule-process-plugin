@@ -1,11 +1,10 @@
 const cv = require('@u4/opencv4nodejs');
-const path = require("path");
 
 /**
  * 图片信息提取处理函数
  * 读取输入的PNG/图片文件，使用OpenCV提取图片的基本信息（宽度、高度、通道数等）
  */
-async function writingRules(inputArray, outputNodeTemplate) {
+ async function writingRules(inputArray, outputNodeTemplate) {
     // 检查文件是否存在
     const pngFiles = inputArray.filter(file => file.normExt === 'png');
 
@@ -29,48 +28,11 @@ async function writingRules(inputArray, outputNodeTemplate) {
             const height = img.rows;   // 高度（行数）
             const channels = img.channels;  // 通道数（彩色图通常为3，灰度图为1）
 
-            console.log(`图片信息：${pngFile.path} | 宽：${width} | 高：${height} | 通道：${channels}`);
-
-            // 3. 初始化绘图所需的Point/Vec
-            // 1. 坐标点（Point）：文档里的 pt2 = new cv.Point(100, 100)
-            const lineStart = new cv.Point(50, 50);    // 直线起点
-            const lineEnd = new cv.Point(200, 50);     // 直线终点
-            const rectTopLeft = new cv.Point(50, 80);  // 矩形左上角
-            const rectBottomRight = new cv.Point(200, 180); // 矩形右下角
-            const circleCenter = new cv.Point(125, 130); // 圆心
-            const textStart = new cv.Point(50, 220);   // 文字起点
-
-            // 2. 颜色（Vec）：文档里的 vec3 = new cv.Vec(100, 100, 0.5)，BGR格式
-            const redColor = new cv.Vec(0, 0, 255);    // 红色（BGR）
-            const greenColor = new cv.Vec(0, 255, 0);  // 绿色（BGR）
-            const blueColor = new cv.Vec(255, 0, 0);   // 蓝色（BGR）
-
-            // ============= 步骤4：绘制图形 =============
-            // 1. 绘制直线：imgMat.drawLine(起点Point, 终点Point, 颜色Vec, 线宽)
-            img.drawLine(lineStart, lineEnd, redColor, 2);
-
-            // 2. 绘制矩形：img.drawRectangle(左上角Point, 右下角Point, 颜色Vec, 线宽)
-            // 线宽=-1表示填充，参考OpenCV原生接口规则
-            img.drawRectangle(rectTopLeft, rectBottomRight, greenColor, 2);
-
-            // 3. 绘制圆形：img.drawCircle(圆心Point, 半径, 颜色Vec, 线宽)
-            img.drawCircle(circleCenter, 40, blueColor, 2);
-
-            // 4. 绘制文字：img.putText(文字, 起点Point, 字体, 字号, 颜色Vec, 线宽)
-            // 字体参数参考OpenCV原生接口，使用cv.FONT_HERSHEY_SIMPLEX
-            img.putText("OpenCV Draw (Official API)", textStart, cv.FONT_HERSHEY_SIMPLEX, 0.8, redColor, 2);
-
-            // 5. 显示图片
-            cv.imshow('Image', img); // 新窗口名为 "Gradient Image"
-            console.log('图片现在应该在新窗口中显示');
-            // 等待用户按键
-            cv.waitKey(); // 按任意键继续执行后续代码或关闭程序
-            cv.destroyAllWindows();
-
-            // 6. 保存处理后的图片（官方imwriteAsync）
-            const outputPath = path.join(outputNodeTemplate.path, 'opencv05.png')
-            await cv.imwriteAsync(outputPath, img);
-            console.log(`在图片上绘制图形已保存：${outputPath}`);
+            console.log('图片信息：');
+            console.log(`文件路径：${pngFile.path}`);
+            console.log(`宽度：${width}px`);
+            console.log(`高度：${height}px`);
+            console.log(`通道数：${channels}（${channels === 3 ? '彩色图（BGR）' : '灰度图'}）`);
 
             content.push({
                 filePath: pngFile.path,
@@ -91,14 +53,14 @@ async function writingRules(inputArray, outputNodeTemplate) {
         }
     }
 
-    return [{...outputNodeTemplate,fileName: 'opencv05',normExt: 'json',content:JSON.stringify(content, null, 2)}];
+    return [{...outputNodeTemplate,fileName: 'opencv01',normExt: 'json',content:JSON.stringify(content, null, 2)}];
 }
 
 module.exports = {
-    name: 'opencv',
-    version: '0.5.0',
+    name: 'opencv2base',
+    version: '0.1.0',
     process: writingRules,
-    description: 'opencv基础：在图片上绘制图形或文字',
+    description: 'opencv基础：图片信息提取工具-读取图片文件并提取宽度、高度、通道数等基本信息',
     notes: {
         node: '18.20.4',
         msg:'0.x.x代表学习分支，实际插件价值偏低',

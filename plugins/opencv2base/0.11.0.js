@@ -87,7 +87,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
 }
 
 module.exports = {
-  name: 'opencv',
+  name: 'opencv2base',
   version: '0.11.0',
   process: writingRules,
   description: 'opencv基础：图片滤波（均值滤波、高斯滤波、中值滤波、双边滤波）用于去噪、模糊、锐化或增强细节',

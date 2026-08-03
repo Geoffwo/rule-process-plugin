@@ -91,7 +91,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
 }
 
 module.exports = {
-  name: 'opencv',
+  name: 'opencv2base',
   version: '0.12.0',
   process: writingRules,
   description: 'opencv基础：二值化，将灰度图转换为只有黑白两色',

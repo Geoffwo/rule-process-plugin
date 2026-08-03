@@ -93,7 +93,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
 }
 
 module.exports = {
-    name: 'opencv',
+    name: 'opencv2base',
     version: '0.9.0',
     process: writingRules,
     description: 'opencv基础：图片去除噪声，连接断裂（适用于二值图观察）',

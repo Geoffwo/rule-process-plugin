@@ -31,28 +31,35 @@ async function writingRules(inputArray, outputNodeTemplate) {
 
             console.log(`图片信息：${pngFile.path} | 宽：${width} | 高：${height} | 通道：${channels}`);
 
-            // BGR → HSV
-            const hsvImg = img.cvtColor(cv.COLOR_BGR2HSV);
-            console.log('已转换为 HSV 色彩空间');
+            // 2. 同位置获取像素
+            const [b, g, r] = img.atRaw(50, 50); // 取中间像素
+            //计算灰度值 Gray = 0.299*R + 0.587*G + 0.114*B
+            const bgr2gray = 0.299*r + 0.587*g + 0.114*b
 
-            // 获取 (50,50) 像素的 HSV 值
-            const [h, s, v] = hsvImg.atRaw(50, 50);
-            console.log(`(50,50) 处 HSV 值: H=${h}, S=${s}, V=${v}`);
+            console.log('\n=== BGR空间信息 ===');
+            console.log('通道数：', img.channels); // 输出1
+            console.log('(50,50)灰度值：', bgr2gray); // （公式：0.299*R + 0.587*G + 0.114*B）
 
-            // 分离 HSV 三个通道（用于学习）
-            // const [hChannel, sChannel, vChannel] = hsvImg.splitChannels();
-            const [hChannel, sChannel, vChannel] = cv.split(hsvImg);
+            // 3. 灰度图
+            const grayImg = img.cvtColor(cv.COLOR_BGR2GRAY);
+            // 读取灰度值（单个数值）
+            const grayVal = grayImg.at(50, 50);
+
+            console.log('\n=== 灰度空间信息 ===');
+            console.log('通道数：', grayImg.channels); // 输出1
+            console.log('(50,50)灰度值：', grayVal); 
+
+            // 5. 显示图片
+            cv.imshow('Image', grayImg); // 新窗口名为 "Gradient Image"
+            console.log('图片现在应该在新窗口中显示');
+            // 等待用户按键
+            cv.waitKey(); // 按任意键继续执行后续代码或关闭程序
+            cv.destroyAllWindows();
 
             // 6. 保存处理后的图片（官方imwriteAsync）
-            const outputPath = path.join(outputNodeTemplate.path, 'opencv07_hsv.png')
-            const outputPath_H = path.join(outputNodeTemplate.path, 'opencv07_h.png')
-            const outputPath_S = path.join(outputNodeTemplate.path, 'opencv07_s.png')
-            const outputPath_V = path.join(outputNodeTemplate.path, 'opencv07_v.png')
-            await cv.imwriteAsync(outputPath, hsvImg);
-            await cv.imwriteAsync(outputPath_H, hChannel);
-            await cv.imwriteAsync(outputPath_S, sChannel);
-            await cv.imwriteAsync(outputPath_V, vChannel);
-            console.log(`在图片上绘制图形已保存`);
+            const outputPath = path.join(outputNodeTemplate.path, 'opencv06.png')
+            await cv.imwriteAsync(outputPath, grayImg);
+            console.log(`在图片上绘制图形已保存：${outputPath}`);
 
             content.push({
                 filePath: pngFile.path,
@@ -73,14 +80,14 @@ async function writingRules(inputArray, outputNodeTemplate) {
         }
     }
 
-    return [{...outputNodeTemplate,fileName: 'opencv07',normExt: 'json',content:JSON.stringify(content, null, 2)}];
+    return [{...outputNodeTemplate,fileName: 'opencv06',normExt: 'json',content:JSON.stringify(content, null, 2)}];
 }
 
 module.exports = {
-    name: 'opencv',
-    version: '0.7.0',
+    name: 'opencv2base',
+    version: '0.6.0',
     process: writingRules,
-    description: 'opencv基础：hsv颜色识别更优秀，Hue（色调）- Saturation（饱和度）- Value（明度）',
+    description: 'opencv基础：灰度图（BGR三通道转换为1通道，公式，转换不可逆）',
     notes: {
         node: '18.20.4',
         msg:'0.x.x代表学习分支，实际插件价值偏低',

@@ -16,56 +16,48 @@ async function writingRules(inputArray, outputNodeTemplate) {
     ];
   }
 
+  // 保留指定颜色，其余变灰
+  // H 色调 红=0°, 绿=120°, 蓝=240°
+  // S 饱和度 S=0 → 灰色；S=255 → 最鲜艳
+  // V 明度 V=0 → 黑色；V=255 → 最亮
+  const lower1 = new cv.Vec(0, 50, 100);   //H=0 S=50 V=100 下限
+  const upper1 = new cv.Vec(10, 255, 255);  //H=10 S=255 V=255 上限
+  // 如果想要减少粉红 就将s从50变为100
+  const lower2 = new cv.Vec(170, 50, 100); //H=170 S=50 V=100 下限
+  const upper2 = new cv.Vec(180, 255, 255); //H=180 S=255 V=255 上限
+
   const content = []
   for (const pngFile of pngFiles) {
     try {
       // 读取图片（支持JPG、PNG等格式）
       // imreadAsync是异步方法，返回图像矩阵对象
       // const img = cv.imread(pngFile.path);//同步
-      const img = await cv.imreadAsync(pngFile.path);
+      const bgrImg = await cv.imreadAsync(pngFile.path);//默认读取方式 BGR
 
       // 获取基本信息
-      const width = img.cols;    // 宽度（列数）
-      const height = img.rows;   // 高度（行数）
-      const channels = img.channels;  // 通道数（彩色图通常为3，灰度图为1）
+      const width = bgrImg.cols;    // 宽度（列数）
+      const height = bgrImg.rows;   // 高度（行数）
+      const channels = bgrImg.channels;  // 通道数（彩色图通常为3，灰度图为1）
 
       console.log(`图片信息：${pngFile.path} | 宽：${width} | 高：${height} | 通道：${channels}`);
 
-      // 初始化绘图所需的Point/Vec
-      const watermarkText = "geoffwo";
-      const fontFace = cv.FONT_HERSHEY_SIMPLEX;
-      const fontScale = 0.7;
-      const thickness = 2;
-      const textColor = new cv.Vec3(255, 255, 255); // 白色（BGR）
+      // 1. 转 HSV 并生成红色掩膜
+      const hsv = bgrImg.cvtColor(cv.COLOR_BGR2HSV);
+      const mask1 = hsv.inRange(lower1, upper1);
+      const mask2 = hsv.inRange(lower2, upper2);
+      const colorMask = mask1.bitwiseOr(mask2); // 合并两个红色区间
 
-      // 1. 计算文字尺寸
-      const {size} = cv.getTextSize(watermarkText, fontFace, fontScale, thickness);
+      // 5. 将掩码与原图叠加，只显示红色区域
+      //bitwiseAnd 是 OpenCV 中用于对 两个相同尺寸、相同类型的 Mat（图像矩阵） 执行按位与操作的函数。但你的 colorMask 是一个 单通道（灰度）的二值掩码（0 或 255），而 bgrImg 是一个 三通道 BGR 图像
+      // const redResult = bgrImg.bitwiseAnd(colorMask);
 
-      // 2. 设置水印位置（右下角，留 10px 边距）
-      const margin = 10;
-      const x = width - size.width - margin;
-      const y = height - margin;
-
-      // 创建一个与原图同尺寸的黑色图层（用于写白色文字）
-      const overlay = new cv.Mat(height, width, cv.CV_8UC3, [0, 0, 0]);
-      overlay.putText( watermarkText, new cv.Point2(x, y), fontFace, fontScale, textColor, thickness);
-
-      // 加权融合：img = α * img + β * overlay + γ
-      // 半透明融合（alpha=0.95 原图，beta=0.5 水印）
-      let result = img.copy();// 直接赋值给result失败，result 是 CV_8UC3（整型），addWeighted 内部计算涉及浮点权重（0.85, 0.5），OpenCV 无法安全地将浮点结果直接写入整型 Mat
-      const mat = cv.addWeighted(img, 0.95, overlay, 0.5, 0, result);//在类型不匹配时不会 in-place 修改 dst，而是返回一个新 Mat
-
-      // 5. 显示图片
-      cv.imshow('Image', mat); // 新窗口名为 "Gradient Image"
-      console.log('图片现在应该在新窗口中显示');
-      // 等待用户按键
-      cv.waitKey(3000); // 按任意键继续执行后续代码或关闭程序
-      cv.destroyAllWindows();
+      //使用了 bitwiseAnd（按位与），而掩码 colorMask 中 非红色区域为 0（黑色），所以这些区域在与原图做 bitwiseAnd 后变成 全黑（0,0,0）
+      const redResult = bgrImg.bitwiseAnd(new cv.Mat([colorMask, colorMask, colorMask]));
 
       // 6. 保存处理后的图片（官方imwriteAsync）
-      const outputPath = path.join(outputNodeTemplate.path, 'opencv05.png')
-      await cv.imwriteAsync(outputPath, mat);
-      console.log(`在图片上绘制图形已保存：${outputPath}`);
+      const outputPath = path.join(outputNodeTemplate.path, 'opencv08.png')
+      await cv.imwriteAsync(outputPath, redResult);
+      console.log(`在图片上绘制图形已保存`);
 
       content.push({
         filePath: pngFile.path,
@@ -86,14 +78,14 @@ async function writingRules(inputArray, outputNodeTemplate) {
     }
   }
 
-  return [{...outputNodeTemplate,fileName: 'opencv05',normExt: 'json',content:JSON.stringify(content, null, 2)}];
+  return [{...outputNodeTemplate,fileName: 'opencv08',normExt: 'json',content:JSON.stringify(content, null, 2)}];
 }
 
 module.exports = {
-  name: 'opencv',
-  version: '0.5.2',
+  name: 'opencv2base',
+  version: '0.8.1',
   process: writingRules,
-  description: 'opencv基础：增加半透明水印',
+  description: 'opencv基础：保留红色，其余变黑（bitwiseAnd（按位与）运算规则是除了掩码区域，其余部分置0，也就是黑色）',
   notes: {
     node: '18.20.4',
     msg:'0.x.x代表学习分支，实际插件价值偏低',

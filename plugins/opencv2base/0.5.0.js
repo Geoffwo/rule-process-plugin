@@ -22,7 +22,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
             // 读取图片（支持JPG、PNG等格式）
             // imreadAsync是异步方法，返回图像矩阵对象
             // const img = cv.imread(pngFile.path);//同步
-            const img = await cv.imreadAsync(pngFile.path);//默认读取方式 BGR
+            const img = await cv.imreadAsync(pngFile.path);
 
             // 获取基本信息
             const width = img.cols;    // 宽度（列数）
@@ -31,34 +31,45 @@ async function writingRules(inputArray, outputNodeTemplate) {
 
             console.log(`图片信息：${pngFile.path} | 宽：${width} | 高：${height} | 通道：${channels}`);
 
-            // 2. 同位置获取像素
-            const [b, g, r] = img.atRaw(50, 50); // 取中间像素
-            //计算灰度值 Gray = 0.299*R + 0.587*G + 0.114*B
-            const bgr2gray = 0.299*r + 0.587*g + 0.114*b
+            // 3. 初始化绘图所需的Point/Vec
+            // 1. 坐标点（Point）：文档里的 pt2 = new cv.Point(100, 100)
+            const lineStart = new cv.Point(50, 50);    // 直线起点
+            const lineEnd = new cv.Point(200, 50);     // 直线终点
+            const rectTopLeft = new cv.Point(50, 80);  // 矩形左上角
+            const rectBottomRight = new cv.Point(200, 180); // 矩形右下角
+            const circleCenter = new cv.Point(125, 130); // 圆心
+            const textStart = new cv.Point(50, 220);   // 文字起点
 
-            console.log('\n=== BGR空间信息 ===');
-            console.log('通道数：', img.channels); // 输出1
-            console.log('(50,50)灰度值：', bgr2gray); // （公式：0.299*R + 0.587*G + 0.114*B）
+            // 2. 颜色（Vec）：文档里的 vec3 = new cv.Vec(100, 100, 0.5)，BGR格式
+            const redColor = new cv.Vec(0, 0, 255);    // 红色（BGR）
+            const greenColor = new cv.Vec(0, 255, 0);  // 绿色（BGR）
+            const blueColor = new cv.Vec(255, 0, 0);   // 蓝色（BGR）
 
-            // 3. 灰度图
-            const grayImg = img.cvtColor(cv.COLOR_BGR2GRAY);
-            // 读取灰度值（单个数值）
-            const grayVal = grayImg.at(50, 50);
+            // ============= 步骤4：绘制图形 =============
+            // 1. 绘制直线：imgMat.drawLine(起点Point, 终点Point, 颜色Vec, 线宽)
+            img.drawLine(lineStart, lineEnd, redColor, 2);
 
-            console.log('\n=== 灰度空间信息 ===');
-            console.log('通道数：', grayImg.channels); // 输出1
-            console.log('(50,50)灰度值：', grayVal); 
+            // 2. 绘制矩形：img.drawRectangle(左上角Point, 右下角Point, 颜色Vec, 线宽)
+            // 线宽=-1表示填充，参考OpenCV原生接口规则
+            img.drawRectangle(rectTopLeft, rectBottomRight, greenColor, 2);
+
+            // 3. 绘制圆形：img.drawCircle(圆心Point, 半径, 颜色Vec, 线宽)
+            img.drawCircle(circleCenter, 40, blueColor, 2);
+
+            // 4. 绘制文字：img.putText(文字, 起点Point, 字体, 字号, 颜色Vec, 线宽)
+            // 字体参数参考OpenCV原生接口，使用cv.FONT_HERSHEY_SIMPLEX
+            img.putText("OpenCV Draw (Official API)", textStart, cv.FONT_HERSHEY_SIMPLEX, 0.8, redColor, 2);
 
             // 5. 显示图片
-            cv.imshow('Image', grayImg); // 新窗口名为 "Gradient Image"
+            cv.imshow('Image', img); // 新窗口名为 "Gradient Image"
             console.log('图片现在应该在新窗口中显示');
             // 等待用户按键
             cv.waitKey(); // 按任意键继续执行后续代码或关闭程序
             cv.destroyAllWindows();
 
             // 6. 保存处理后的图片（官方imwriteAsync）
-            const outputPath = path.join(outputNodeTemplate.path, 'opencv06.png')
-            await cv.imwriteAsync(outputPath, grayImg);
+            const outputPath = path.join(outputNodeTemplate.path, 'opencv05.png')
+            await cv.imwriteAsync(outputPath, img);
             console.log(`在图片上绘制图形已保存：${outputPath}`);
 
             content.push({
@@ -80,14 +91,14 @@ async function writingRules(inputArray, outputNodeTemplate) {
         }
     }
 
-    return [{...outputNodeTemplate,fileName: 'opencv06',normExt: 'json',content:JSON.stringify(content, null, 2)}];
+    return [{...outputNodeTemplate,fileName: 'opencv05',normExt: 'json',content:JSON.stringify(content, null, 2)}];
 }
 
 module.exports = {
-    name: 'opencv',
-    version: '0.6.0',
+    name: 'opencv2base',
+    version: '0.5.0',
     process: writingRules,
-    description: 'opencv基础：灰度图（BGR三通道转换为1通道，公式，转换不可逆）',
+    description: 'opencv基础：在图片上绘制图形或文字',
     notes: {
         node: '18.20.4',
         msg:'0.x.x代表学习分支，实际插件价值偏低',

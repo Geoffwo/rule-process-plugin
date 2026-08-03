@@ -16,61 +16,56 @@ async function writingRules(inputArray, outputNodeTemplate) {
     ];
   }
 
-  // 保留指定颜色，其余变灰
-  // H 色调 红=0°, 绿=120°, 蓝=240°
-  // S 饱和度 S=0 → 灰色；S=255 → 最鲜艳
-  // V 明度 V=0 → 黑色；V=255 → 最亮
-  const lower1 = new cv.Vec(0, 50, 100);   //H=0 S=50 V=100 下限
-  const upper1 = new cv.Vec(10, 255, 255);  //H=10 S=255 V=255 上限
-  // 如果想要减少粉红 就将s从50变为100
-  const lower2 = new cv.Vec(170, 50, 100); //H=170 S=50 V=100 下限
-  const upper2 = new cv.Vec(180, 255, 255); //H=180 S=255 V=255 上限
-
   const content = []
   for (const pngFile of pngFiles) {
     try {
       // 读取图片（支持JPG、PNG等格式）
       // imreadAsync是异步方法，返回图像矩阵对象
       // const img = cv.imread(pngFile.path);//同步
-      const bgrImg = await cv.imreadAsync(pngFile.path);//默认读取方式 BGR
+      const img = await cv.imreadAsync(pngFile.path);
 
       // 获取基本信息
-      const width = bgrImg.cols;    // 宽度（列数）
-      const height = bgrImg.rows;   // 高度（行数）
-      const channels = bgrImg.channels;  // 通道数（彩色图通常为3，灰度图为1）
+      const width = img.cols;    // 宽度（列数）
+      const height = img.rows;   // 高度（行数）
+      const channels = img.channels;  // 通道数（彩色图通常为3，灰度图为1）
 
       console.log(`图片信息：${pngFile.path} | 宽：${width} | 高：${height} | 通道：${channels}`);
 
-      // 1. 转 HSV
-      const hsv = bgrImg.cvtColor(cv.COLOR_BGR2HSV);
-      const [h, s, v] = hsv.splitChannels();//获取三通道
+      // 初始化绘图所需的Point/Vec
+      const watermarkText = "geoffwo";
+      const fontFace = cv.FONT_HERSHEY_SIMPLEX;
+      const fontScale = 0.7;
+      const thickness = 2;
+      const textColor = new cv.Vec3(255, 255, 255); // 白色（BGR）
 
-      // 2. 创建红色掩码
-      const mask1 = hsv.inRange(lower1, upper1);
-      const mask2 = hsv.inRange(lower2, upper2);
-      const redMask = mask1.bitwiseOr(mask2);// 合并两个红色区间
+      // 1. 计算文字尺寸
+      const {size} = cv.getTextSize(watermarkText, fontFace, fontScale, thickness);
 
-      // 3. 增强红色区域的饱和度（S）和/或明度（V）
-      const sEnhanced = s.mul(1.2);// 饱和度增强系数（>1 更鲜艳）
-      const vEnhanced = v.mul(1.1);// 明度增强系数（>1 更亮）
+      // 2. 设置水印位置（右下角，留 10px 边距）
+      const margin = 10;
+      const x = width - size.width - margin;
+      const y = height - margin;
 
-      // 4. 使用掩码：只在红色区域应用增强
-      const sFinal = s.copy();
-      const vFinal = v.copy();
+      // 创建一个与原图同尺寸的黑色图层（用于写白色文字）
+      const overlay = new cv.Mat(height, width, cv.CV_8UC3, [0, 0, 0]);
+      overlay.putText( watermarkText, new cv.Point2(x, y), fontFace, fontScale, textColor, thickness);
 
-      sEnhanced.copyTo(sFinal, redMask);//在redMask部分，将sEnhanced拷到sFinal
-      vEnhanced.copyTo(vFinal, redMask);
+      // 加权融合：img = α * img + β * overlay + γ
+      // 半透明融合（alpha=0.95 原图，beta=0.5 水印）
+      let result = img.copy();// 直接赋值给result失败，result 是 CV_8UC3（整型），addWeighted 内部计算涉及浮点权重（0.85, 0.5），OpenCV 无法安全地将浮点结果直接写入整型 Mat
+      const mat = cv.addWeighted(img, 0.95, overlay, 0.5, 0, result);//在类型不匹配时不会 in-place 修改 dst，而是返回一个新 Mat
 
-      // 5. 合并增强后的 HSV
-      const enhancedHsv = new cv.Mat([h, sFinal, vFinal]);
-
-      // 6. 转回 BGR
-      const enhancedBgr = enhancedHsv.cvtColor(cv.COLOR_HSV2BGR);
+      // 5. 显示图片
+      cv.imshow('Image', mat); // 新窗口名为 "Gradient Image"
+      console.log('图片现在应该在新窗口中显示');
+      // 等待用户按键
+      cv.waitKey(3000); // 按任意键继续执行后续代码或关闭程序
+      cv.destroyAllWindows();
 
       // 6. 保存处理后的图片（官方imwriteAsync）
-      const outputPath = path.join(outputNodeTemplate.path, 'opencv08.png')
-      await cv.imwriteAsync(outputPath, enhancedBgr);
-      console.log(`在图片上绘制图形已保存`);
+      const outputPath = path.join(outputNodeTemplate.path, 'opencv05.png')
+      await cv.imwriteAsync(outputPath, mat);
+      console.log(`在图片上绘制图形已保存：${outputPath}`);
 
       content.push({
         filePath: pngFile.path,
@@ -91,14 +86,14 @@ async function writingRules(inputArray, outputNodeTemplate) {
     }
   }
 
-  return [{...outputNodeTemplate,fileName: 'opencv08',normExt: 'json',content:JSON.stringify(content, null, 2)}];
+  return [{...outputNodeTemplate,fileName: 'opencv05',normExt: 'json',content:JSON.stringify(content, null, 2)}];
 }
 
 module.exports = {
-  name: 'opencv',
-  version: '0.8.0',
+  name: 'opencv2base',
+  version: '0.5.2',
   process: writingRules,
-  description: 'opencv基础：增强红色区域（基于HSV，仅强化红色，其余不变）',
+  description: 'opencv基础：增加半透明水印',
   notes: {
     node: '18.20.4',
     msg:'0.x.x代表学习分支，实际插件价值偏低',

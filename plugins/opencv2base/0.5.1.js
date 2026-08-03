@@ -88,7 +88,7 @@ async function writingRules(inputArray, outputNodeTemplate) {
 }
 
 module.exports = {
-  name: 'opencv',
+  name: 'opencv2base',
   version: '0.5.1',
   process: writingRules,
   description: 'opencv基础：增加纯色水印',
