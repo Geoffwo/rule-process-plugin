@@ -375,87 +375,87 @@
       }
     }
   },
-  "opencv": {
+  "opencv2base": {
     "versions": {
       "0.1.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.1.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.1.0.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.1.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.1.0.js"
       },
       "0.10.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.10.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.10.0.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.10.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.10.0.js"
       },
       "0.10.1": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.10.1.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.10.1.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.10.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.10.1.js"
       },
       "0.11.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.11.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.11.0.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.11.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.11.0.js"
       },
       "0.12.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.12.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.12.0.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.12.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.12.0.js"
       },
       "0.2.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.2.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.2.0.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.2.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.2.0.js"
       },
       "0.3.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.3.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.3.0.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.3.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.3.0.js"
       },
       "0.4.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.4.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.4.0.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.4.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.4.0.js"
       },
       "0.5.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.5.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.5.0.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.5.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.5.0.js"
       },
       "0.5.1": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.5.1.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.5.1.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.5.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.5.1.js"
       },
       "0.5.2": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.5.2.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.5.2.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.5.2.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.5.2.js"
       },
       "0.5.3": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.5.3.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.5.3.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.5.3.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.5.3.js"
       },
       "0.6.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.6.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.6.0.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.6.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.6.0.js"
       },
       "0.6.1": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.6.1.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.6.1.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.6.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.6.1.js"
       },
       "0.7.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.7.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.7.0.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.7.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.7.0.js"
       },
       "0.8.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.8.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.8.0.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.8.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.8.0.js"
       },
       "0.8.1": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.8.1.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.8.1.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.8.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.8.1.js"
       },
       "0.8.2": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.8.2.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.8.2.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.8.2.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.8.2.js"
       },
       "0.9.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/0.9.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/0.9.0.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.9.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.9.0.js"
       },
       "1.0.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv/1.0.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv/1.0.0.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/1.0.0.js"
       }
     }
   },
