@@ -757,7 +757,7 @@ async function takeScreenshot(page, opt, ctx, target) {
 }
 
 // ====================== 核心入口 writingRules（迭代器实时导出）======================
-async function* writingRules(inputArray, outputNodeTemplate) {rule.js
+async function* writingRules(inputArray, outputNodeTemplate) {
     const outputDir = outputNodeTemplate.path;
     const inputPath = path.join(outputDir, '../inputDir');
     const xlsxOutputPath = path.join(inputPath, 'data.xlsx');
@@ -913,7 +913,7 @@ async function* writingRules(inputArray, outputNodeTemplate) {rule.js
                 // 获取一个page实例用于执行actions（复用default的tab）
                 const page = await getPage(globalCtxKey, "default");
                 // 复用已经存在的 runPageActions 迭代器，不需要重写action解析
-                const hookActions = runPageActions(page, cfg.afterAllHook, globalCtx, outputNodeTemplate);
+                const hookActions = runPageActions(page, cfg.afterAllHook, globalCtx, { ...outputNodeTemplate, path: inputPath});
                 for await (const outFile of hookActions) {
                     yield [outFile];
                 }

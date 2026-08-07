@@ -852,9 +852,9 @@ async function* writingRules(inputArray, outputNodeTemplate) {
 
     const xlsxFile = inputArray.find(item => item.normExt === 'xlsx' && item.name === 'result');
     if (!xlsxFile) {
-        createXlsxTemplate(xlsxOutputPath);
-        console.log('未找到 result.xlsx，已生成示例Excel模板');
-        yield [{ ...outputNodeTemplate, content: '错误: 未找到 result.xlsx，已生成示例Excel模板' }];
+        // createXlsxTemplate(xlsxOutputPath);
+        console.log('未找到 result.xlsx');
+        yield [{ ...outputNodeTemplate, content: '错误: 未找到 result.xlsx' }];
         return;
     }
 
