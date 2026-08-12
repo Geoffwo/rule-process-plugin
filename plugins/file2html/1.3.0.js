@@ -709,6 +709,7 @@ module.exports = {
     name: 'file2html',
     version: '1.3.0',
     process: writingRules,
+    mode: 'stream', // 声明为流式模式
     description: '将输入的文件数组拼接成树结构，输出可展开/收缩的 HTML 文件，支持点击打开/复制路径/批量复制，并新增关键字搜索过滤（命中高亮、自动展开祖先目录、空结果提示）',
     notes: {
         node: '18.20.4'
