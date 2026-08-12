@@ -42,10 +42,30 @@ function readExcel(file) {
 function createXlsxTemplate(outputPath) {
     // 示例：必应高级搜索指令任务清单
     const sampleSearchTasks = [
-        { reportId: "001", query: "site:zhihu.com 人工智能 filetype:pdf" },
-        { reportId: "002", query: "intitle:大模型 行业报告 filetype:pdf" },
-        { reportId: "003", query: "inurl:docs nodejs 最佳实践" },
-        { reportId: "004", query: "site:github.com puppeteer bing 爬虫" }
+        {
+            taskId: "001",
+            searchQuery: "site:zhihu.com 人工智能 filetype:pdf",
+            title: "人工智能行业报告",
+            url: "https://www.tup.tsinghua.edu.cn/upload/books/yz/107125-01.pdf"
+        },
+        {
+            taskId: "002",
+            searchQuery: "site:zhihu.com 人工智能 filetype:pdf",
+            title: "人工智能发展报告",
+            url: "https://www.qstheory.cn/20250914/6684ebcd16794a898ad15832e7fa793b/c.html"
+        },
+        {
+            taskId: "003",
+            searchQuery: "site:zhihu.com 人工智能 filetype:pdf",
+            title: "人工智能百科",
+            url: "https://www.caai.cn/"
+        },
+        {
+            taskId: "004",
+            searchQuery: "site:zhihu.com 人工智能 filetype:pdf",
+            title: "人工智能百度",
+            url: "https://baike.baidu.com/item/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD/58131596"
+        }
     ];
     const workbook = xlsx.utils.book_new();
     const worksheet = xlsx.utils.json_to_sheet(sampleSearchTasks);
@@ -109,82 +129,153 @@ function createConfigTemplate() {
             "scale": 1,
             "userAgent": "",
             "timeout": 30000,
-            "headless": false
+            // 第二轮完全不需要浏览器页面渲染，但是插件底层强制需要puppeteer实例，headless:true静默后台跑
+            "headless": true
         },
-        "delay": 1500,
+        "delay": 1000,
         "steps": [
             {
-                "stepName": "Bing高级搜索",
+                "stepName": "批量文件下载",
                 "ctxKey": "default",
                 "tabKey": "default",
-                "once": false,
-                "url": "https://cn.bing.com/search?q={{query}}",
+                // 第二轮不需要访问url，给空字符串，runPageActions内部goto会被渲染为空字符串，这里用一个about:blank占位
+                "url": "about:blank",
                 "actions": [
-                    { "waitSelector": "li.b_algo" },
                     {
-                        "getData": "li.b_algo",
-                        "collect": [
-                            { "sel": "h2 a", "key": "title", "value": "textContent" },
-                            { "sel": "h2 a", "key": "url", "value": "href" }
-                        ],
-                        "storeKey": "rawListData"
-                    },
-                    {
-                        "pageJs": `
-                            const taskResult = rawListData.map(item => ({
-                                ...item,
-                                taskId: "{{reportId}}",
-                                searchQuery: "{{query}}"
-                            }));
-                            return taskResult;
-                        `,
-                        "pageJsParams": ["rawListData"],
-                        "storeKey": "currentBatch"
-                    },
-                    {
-                        // ctxJs运行在Node，操作真实session对象，跨任务保存
+                        // ctxJs：清洗文件名，剔除windows非法文件名字符
                         "ctxJs": `
-                            if(!ctx.session.allSearchResult){
-                                ctx.session.allSearchResult = [];
-                            }
-                            if(Array.isArray(currentBatch)){
-                                ctx.session.allSearchResult.push(...currentBatch);
-                            }
-                            return ctx.session.allSearchResult.length;
-                        `,
-                        "ctxJsParams": ["currentBatch"],
-                        "storeKey": "totalResultCount"
+                            const tmpTime = "unnamed_"+Date.now();
+                            let rawTitle = ctx.title || tmpTime;
+                            const badChars = /[\\/:*?"<>|]/g;
+                            const safeBaseName = rawTitle.replace(badChars,"_");
+                            ctx.safeBaseName = safeBaseName;
+                            let fileExt = "html";
+                            try{
+                                const u = new URL(ctx.url);
+                                const path = u.pathname;
+                                const dot = path.lastIndexOf(".");
+                                if(dot > 0){
+                                    const ext = path.slice(dot+1).toLowerCase();
+                                    if(ext && !ext.includes("/") && !ext.includes("\\\\")){
+                                        fileExt = ext;
+                                    }
+                                }
+                            }catch(e){}
+                            
+                            ctx.fileExt = fileExt;
+                            ctx.downloadUrl = ctx.url || "";
+                        `
                     },
-                    { "ctxClear": ["rawListData", "currentBatch"] }
+                    {
+                        // Node层axios下载二进制buffer
+                        "axiosApi": "{{downloadUrl}}",
+                        "method": "GET",
+                        "responseType": "buffer",
+                        "headers": {
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                            "Accept": "*/*"
+                        },
+                        "timeout": 25000,
+                        "storeKey": "downloadBuf"
+                    },
+                    {
+                        // 将buffer导出成磁盘文件
+                        "exportData": "downloadBuf",
+                        "value": "{{safeBaseName}}",
+                        "ext": "{{fileExt}}"
+                    },
+                    {
+                        // 清理本轮上下文变量，避免污染下一行task
+                        "ctxClear": ["safeBaseName","downloadUrl","downloadBuf"]
+                    }
                 ]
             }
-        ],
-        "afterAllHook": [
-            {
-                // afterAllHook同样可以访问真实session，把数据拷贝到ctx给json2xlsx消费
-                "ctxJs": `
-                    ctx.allSearchResult = ctx.session.allSearchResult || [];
-                `
-            },
-            {
-                "json2xlsx": "allSearchResult",
-                "storeKey": "allSearchResultXlsxBuf"
-            },
-            {
-                "exportData": "allSearchResultXlsxBuf",
-                "value": "bing_search_all_result_合并总表",
-                "ext": "xlsx"
-            },
-            {
-                "ctxJs": `
-                    // 清理session，避免下一轮运行残留旧数据
-                    delete ctx.session.allSearchResult;
-                `
-            },
-            { "ctxClear": ["allSearchResult", "allSearchResultXlsxBuf"] }
         ]
     };
 }
+
+// =========【新增：抽离公共浏览器fetch函数，和fetchApi action逻辑完全一致】=========
+/**
+ * @param {object} target page / frame
+ * @param {string} apiUrl
+ * @param {string} method
+ * @param {object} reqHeaders
+ * @param {any} rawBody
+ * @param {string} responseType json|buffer|text
+ */
+async function innerBrowserFetch(target, apiUrl, method, reqHeaders, rawBody, responseType) {
+    let bodyPayload = null;
+    if (rawBody !== undefined && rawBody !== null && rawBody !== "") {
+        // 对象自动序列化json；字符串直接使用（表单字符串）
+        bodyPayload = typeof rawBody === "object" ? JSON.stringify(rawBody) : rawBody;
+    }
+
+    const respData = await target.evaluate(async (url, reqMethod, headersObj, bodyStr, respType) => {
+        const opt = {
+            method: reqMethod,
+            credentials: "include", // 带上cookie，优先使用include
+            headers: { ...headersObj }
+        };
+
+        // GET请求禁止附加body
+        if (bodyStr && reqMethod !== "GET") {
+            opt.body = bodyStr;
+            // 没有手动设置Content‑Type时默认json
+            if (!opt.headers["Content‑Type"] && !opt.headers["content‑type"]) {
+                opt.headers["Content‑Type"] = "application/json";
+            }
+        }
+
+        const res = await fetch(url, opt);
+
+        if(respType === "buffer"){
+            // 二进制文件：返回Uint8Array数组，传给node层转Buffer
+            const ab = await res.arrayBuffer();
+            return {
+                __success: res.ok, // ✔修复：不要写死true，http状态判断
+                __status: res.status,
+                __isBinary: true,
+                bytes: Array.from(new Uint8Array(ab))
+            };
+        } else if(respType === "json"){
+            // 默认json模式，原有逻辑不变
+            try {
+                const json = await res.json();
+                return {
+                    __success: res.ok,
+                    __status: res.status,
+                    __isBinary: false,
+                    data: json
+                };
+            } catch(e) {
+                // 返回不是json文本，解析失败
+                return {
+                    __success: false,
+                    __status: res.status,
+                    __isBinary: false,
+                    error: "json parse fail:" + e.message
+                }
+            }
+        } else {
+            // text/html兜底分支，防止返回undefined
+            const text = await res.text();
+            return {
+                __success: res.ok,
+                __status: res.status,
+                __isBinary: false,
+                data: text,
+                __textMode: true
+            }
+        }
+    }, apiUrl, method, reqHeaders, bodyPayload, responseType);
+
+    if (respData.__isBinary) {
+        return Buffer.from(respData.bytes);
+    } else {
+        return respData;
+    }
+}
+// =================================================================================
 
 /**
  * 执行页面动作队列（generator：截图实时 yield，支持迭代器实时导出）
@@ -289,67 +380,12 @@ async function* runPageActions(page, actions, ctx, outputTpl) {
             const storeKey = renderTemplate(action.storeKey, ctx);
             const responseType = renderTemplate(action.responseType || "json", ctx);
 
-            let bodyPayload = null;
-            if (rawBody !== undefined && rawBody !== null && rawBody !== "") {
-                // 对象自动序列化json；字符串直接使用（表单字符串）
-                bodyPayload = typeof rawBody === "object" ? JSON.stringify(rawBody) : rawBody;
-            }
-
             try {
-                const respData = await target.evaluate(async (url, reqMethod, headersObj, bodyStr, respType) => {
-                    const opt = {
-                        method: reqMethod,
-                        credentials: "include", // 带上cookie，优先使用include
-                        headers: { ...headersObj }
-                    };
-
-                    // GET请求禁止附加body
-                    if (bodyStr && reqMethod !== "GET") {
-                        opt.body = bodyStr;
-                        // 没有手动设置Content-Type时默认json
-                        if (!opt.headers["Content-Type"] && !opt.headers["content-type"]) {
-                            opt.headers["Content-Type"] = "application/json";
-                        }
-                    }
-
-                    const res = await fetch(url, opt);
-
-                    if(respType === "buffer"){
-                        // 二进制文件：返回Uint8Array数组，传给node层转Buffer
-                        const ab = await res.arrayBuffer();
-                        return {
-                            __success: true,
-                            __status: res.status,
-                            __isBinary: true,
-                            bytes: Array.from(new Uint8Array(ab))
-                        };
-                    }
-
-                    if(respType === "json"){
-                        // 默认json模式，原有逻辑不变
-                        const json = await res.json();
-                        return {
-                            __success: res.ok,
-                            __status: res.status,
-                            __isBinary: false,
-                            data: json
-                        };
-                    }
-                }, apiUrl, method, reqHeaders, bodyPayload, responseType);
-
-                // 二进制模式：node层还原Buffer
-                if(respData.__isBinary){
-                    ctx[storeKey] = Buffer.from(respData.bytes);
-                    console.log(`[Action] fetchApi(buffer) 下载二进制完成，存入ctx.${storeKey}, size:${respData.bytes.length} bytes`);
-                }else{
-                    // 存入上下文
-                    ctx[storeKey] = respData;
-                    console.log(`[Action] fetchApi(json) 请求成功，存入ctx.${storeKey} status:${respData.__status}`);
-                }
+                // 【最小改动】直接复用已抽取公共函数，移除重复evaluate代码
+                const res = await innerBrowserFetch(target, apiUrl, method, reqHeaders, rawBody, responseType);
+                ctx[storeKey] = res;
             } catch (err) {
                 console.error(`[Action] fetchApi 请求失败 url:${apiUrl}`, err.message);
-                // 保存错误信息，不直接崩溃，上层可判断
-                ctx[storeKey] = { __success: false, error: err.message };
             }
             continue;
         }
@@ -415,6 +451,36 @@ async function* runPageActions(page, actions, ctx, outputTpl) {
                 }
             } catch (err) {
                 console.error(`[Action] axiosApi 请求失败 url:${apiUrl}`, err.message);
+                try {
+                    const tempPage = await page.browser().newPage();
+                    try {
+                        if(reqHeaders?.["User-Agent"]){
+                            await tempPage.setUserAgent(reqHeaders["User-Agent"]);
+                        }
+                        await tempPage.setRequestInterception(true);
+                        tempPage.on('request', (req) => {
+                            if(['image','media','font'].includes(req.resourceType())){
+                                return req.abort();
+                            }
+                            req.continue();
+                        });
+                        await tempPage.goto(apiUrl, {
+                            timeout: action.timeout ?? 25000,
+                            waitUntil: "networkidle2"
+                        });
+                        await sleep(1200);
+                        const fullHtml = await tempPage.content();
+                        // 此处务必使用标准 utf-8
+                        ctx[storeKey] = Buffer.from(fullHtml, "utf-8");
+                        ctx[storeKey + "_source"] = "browser_fallback_goto";
+                        console.log(`[Action] axiosApi降级成功，通过浏览器goto获取网页HTML，存入ctx.${storeKey}`);
+                    } finally {
+                        await tempPage.close();
+                    }
+                } catch (fbErr) {
+                    console.error(`[Action] axiosApi 浏览器goto降级同样失败 url:${apiUrl}`, fbErr.message);
+                    ctx[storeKey] = null;
+                }
             }
             continue;
         }
@@ -948,7 +1014,7 @@ async function* writingRules(inputArray, outputNodeTemplate) {
 // ====================== 插件导出 ======================
 module.exports = {
     name: 'browser2auto',
-    version: '4.0.0',
+    version: '4.1.0',
     process: writingRules,
     description: 'Excel驱动puppeteer自动化；双键(ctxKey/tabKey)驱动会话隔离与标签页复用；once成功后跳过、iframe穿透；迭代器实时导出；getData采集、fetchApi浏览器上下文请求、axiosApi Node层axios请求、json2xlsx转换、exportData多格式导出、ctxClear上下文清理',
     notes: {

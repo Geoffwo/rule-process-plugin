@@ -172,7 +172,7 @@ function createConfigTemplate() {
             },
             {
                 "exportData": "allSearchResultXlsxBuf",
-                "value": "bing_search_all_result_合并总表",
+                "value": "result",
                 "ext": "xlsx"
             },
             {
@@ -762,13 +762,13 @@ async function* writingRules(inputArray, outputNodeTemplate) {
     const inputPath = path.join(outputDir, '../inputDir');
     const xlsxOutputPath = path.join(inputPath, 'data.xlsx');
 
-    const configFile = inputArray.find(item => item.normExt === 'json' && item.name === 'config');
+    const configFile = inputArray.find(item => item.normExt === 'json' && item.name === 'config01');
     if (!configFile) {
         const templateCfg = createConfigTemplate();
-        console.log('未找到 config.json，已生成模板配置');
+        console.log('未找到 config01.json，已生成模板配置');
         yield [
-            { ...outputNodeTemplate, content: '错误: 未找到 config.json，已生成模板配置' },
-            { ...outputNodeTemplate, path: inputPath, fileName: 'config', normExt: 'json', content: JSON.stringify(templateCfg, null, 2) }
+            { ...outputNodeTemplate, content: '错误: 未找到 config01.json，已生成模板配置' },
+            { ...outputNodeTemplate, path: inputPath, fileName: 'config01', normExt: 'json', content: JSON.stringify(templateCfg, null, 2) }
         ];
         return;
     }
@@ -870,7 +870,7 @@ async function* writingRules(inputArray, outputNodeTemplate) {
                     });
 
                     if (Array.isArray(step.actions)) {
-                        const actions = runPageActions(page, step.actions, ctx, outputNodeTemplate);
+                        const actions = runPageActions(page, step.actions, ctx, { ...outputNodeTemplate, path: inputPath});
                         for await (const outFile of actions) {
                             successCount++;
                             yield [outFile];
@@ -913,7 +913,7 @@ async function* writingRules(inputArray, outputNodeTemplate) {
                 // 获取一个page实例用于执行actions（复用default的tab）
                 const page = await getPage(globalCtxKey, "default");
                 // 复用已经存在的 runPageActions 迭代器，不需要重写action解析
-                const hookActions = runPageActions(page, cfg.afterAllHook, globalCtx, outputNodeTemplate);
+                const hookActions = runPageActions(page, cfg.afterAllHook, globalCtx, { ...outputNodeTemplate, path: inputPath});
                 for await (const outFile of hookActions) {
                     yield [outFile];
                 }
@@ -948,9 +948,9 @@ async function* writingRules(inputArray, outputNodeTemplate) {
 // ====================== 插件导出 ======================
 module.exports = {
     name: 'browser2auto',
-    version: '4.0.0',
+    version: '4.0.1',
     process: writingRules,
-    description: 'Excel驱动puppeteer自动化；双键(ctxKey/tabKey)驱动会话隔离与标签页复用；once成功后跳过、iframe穿透；迭代器实时导出；getData采集、fetchApi浏览器上下文请求、axiosApi Node层axios请求、json2xlsx转换、exportData多格式导出、ctxClear上下文清理',
+    description: '（配套4.0.2）Excel驱动puppeteer自动化；双键(ctxKey/tabKey)驱动会话隔离与标签页复用；once成功后跳过、iframe穿透；迭代器实时导出；getData采集、fetchApi浏览器上下文请求、axiosApi Node层axios请求、json2xlsx转换、exportData多格式导出、ctxClear上下文清理',
     notes: {
         node: '>=18.0.0',
         tips: `
