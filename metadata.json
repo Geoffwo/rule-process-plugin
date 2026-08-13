@@ -259,6 +259,34 @@
       }
     }
   },
+  "file2html": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/file2html/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/file2html/1.0.0.js"
+      },
+      "1.1.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/file2html/1.1.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/file2html/1.1.0.js"
+      },
+      "1.2.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/file2html/1.2.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/file2html/1.2.0.js"
+      },
+      "1.3.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/file2html/1.3.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/file2html/1.3.0.js"
+      },
+      "1.4.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/file2html/1.4.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/file2html/1.4.0.js"
+      },
+      "1.5.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/file2html/1.5.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/file2html/1.5.0.js"
+      }
+    }
+  },
   "formAutoFill": {
     "versions": {
       "1.0.0": {
