@@ -278,6 +278,6 @@ module.exports = {
         normExt: ['json']
     },
     rely: {
-        'uiohook-napi': '^0.3.0'
+        'uiohook-napi': '1.5.5'
     },
 };
