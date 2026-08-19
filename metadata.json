@@ -112,6 +112,10 @@
       "4.1.0": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/browser2auto/4.1.0.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/browser2auto/4.1.0.js"
+      },
+      "5.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/browser2auto/5.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/browser2auto/5.0.0.js"
       }
     }
   },
