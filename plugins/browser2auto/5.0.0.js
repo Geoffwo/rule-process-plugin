@@ -214,6 +214,26 @@ function createConfigTemplate() {
                     {"input": "#password","value": "Dareway@2024"},
                     {"click": "#sbmit"}
                 ]
+            },
+            {
+                "stepName":"进入首页",
+                "ctxKey":"default",
+                "tabKey":"mifcp",
+                "url":"",
+                "actions":[
+                    { "waitSelector": ".treeview"},
+                    { "click": ".treeview", "value": "物价管理" },
+
+                    { "waitSelector": "a.nav-link"},
+                    { "click": "a.nav-link", "value": "标准物价目录" },
+
+                    { "switchFrame": "iframe[src*='medPriceManage/fwdStandardPriceManage']"},
+                    { "waitSelector": ".container-fluid"},
+                    { "select": "#gather_caliber", "text":"治疗费" },
+                    { "click": "#btn_query" },
+                    { "waitMs": 1000 },
+                    { "screenshot": ".container-fluid","fullPage": false}
+                ]
             }
         ]
     };
