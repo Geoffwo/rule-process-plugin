@@ -8,7 +8,7 @@
  *     返回一个状态输出节点。
  *   - 参数集中在顶部 config 配置块，运行前按需调整。
  *
- * 输入约定：文件名 data.xlsx，第一个 sheet，A 列=ICD10 编码、B 列=ICD10 名称、首行为表头。
+ * 输入约定：文件名 data.xlsx，第一个 sheet，A 列=ICD 编码、B 列=ICD 名称、首行为表头。
  * 无输入文件或源表无有效数据时，自动输出"输入模板.xlsx"，按模板填数据后重跑。
  */
 const path = require('path');
@@ -748,8 +748,8 @@ function readExcel(file,sheet) {
 function writeOutput(results, outputPath){
   const header = [
     '联合编码', '联合名称','联合是否灰度',
-    'ICD10编码1', 'ICD10名称1','1是否灰度',
-    'ICD10编码2', 'ICD10名称2','2是否灰度',
+    'ICD编码1', 'ICD名称1','1是否灰度',
+    'ICD编码2', 'ICD名称2','2是否灰度',
     '匹配方式', '关联得分', '连接词'
   ];
 
@@ -829,14 +829,14 @@ function writingRules(inputArray, outputNodeTemplate) {
 }
 
 module.exports = {
-  name: 'icd10check',
+  name: 'icdCheck',
   version: '1.0.0',
   process: writingRules,
-  description: 'ICD 联合诊断发现器：基于 bigram 倒排索引(blocking)+成分包含度(range)，从 ICD10 名称表中自动发现"联合诊断=A+B"的预结果（精确切分 exact + 兜底 loose + 子序列 subseq + 模糊配对 ngram），供后续人工/AI 筛选',
+  description: 'ICD 联合诊断发现器：基于 bigram 倒排索引(blocking)+成分包含度(range)，从 ICD 名称表中自动发现"联合诊断=A+B"的预结果（精确切分 exact + 兜底 loose + 子序列 subseq + 模糊配对 ngram），供后续人工/AI 筛选',
   notes: {
     node: '18.20.4',
     tips: [
-      '输入约定：文件名 data.xlsx，第一个 sheet，A 列=ICD10 编码、B 列=ICD10 名称、首行表头；无数据时自动输出输入模板',
+      '输入约定：文件名 data.xlsx，第一个 sheet，A 列=ICD 编码、B 列=ICD 名称、首行表头；无数据时自动输出输入模板',
       '输出：在框架输出目录生成 result.xlsx（预结果表）与 result.json（运行摘要），列含 联合编码/联合名称/两个成分编码名称/匹配方式/关联得分/连接词',
       'method=exact 高置信精确切分；method=loose 双子串兜底（连接词未知，建议优先审）；method=subseq 术式修饰词型（连接词列为"xx"，即 union 中未被成分覆盖的修饰文本，建议重点审）；method=ngram 别名/缩写型模糊召回',
       '阈值集中在脚本顶部 config，按需调整'
@@ -867,7 +867,7 @@ module.exports = {
   },
   output: {
     normExt: 'xlsx文件',
-    format: '预结果表：联合编码,联合名称,ICD10编码1,ICD10名称1,ICD10编码2,ICD10名称2,匹配方式,关联得分,连接词'
+    format: '预结果表：联合编码,联合名称,ICD编码1,ICD名称1,ICD编码2,ICD名称2,匹配方式,关联得分,连接词'
   },
   rely: {
     'xlsx': '0.18.0'
