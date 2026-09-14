@@ -90,7 +90,11 @@ rule-process-plugin/
 | generateJsMode | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/generateJsMode/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/generateJsMode/1.0.0.js) |
 | html2js | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/html2js/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/html2js/1.0.0.js) |
 | html2png | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/html2png/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/html2png/1.0.0.js) |
+| icdAI | 2.1.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI/2.1.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI/2.1.0.js) |
 | icdAI | 2.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI/2.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI/2.0.0.js) |
+| icdAI | 1.1.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI/1.1.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI/1.1.1.js) |
+| icdAI | 1.1.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI/1.1.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI/1.1.0.js) |
+| icdAI | 1.0.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI/1.0.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI/1.0.1.js) |
 | icdAI | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI/1.0.0.js) |
 | icdCheck | 1.1.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdCheck/1.1.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdCheck/1.1.0.js) |
 | icdCheck | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdCheck/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdCheck/1.0.0.js) |
