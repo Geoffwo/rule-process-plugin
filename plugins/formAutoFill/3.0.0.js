@@ -303,12 +303,20 @@ async function executeStep(step, currentData, config, context) {
 
       // 单个按键/组合键
     case 'keyTap':
-      robot.keyTap(step.value, step.action);
+      if(step.action){
+        robot.keyTap(step.value, step.action);
+      }else{
+        robot.keyTap(step.value);
+      }
       break;
 
       // 按键按下/释放
     case 'keyToggle':
-      robot.keyToggle(step.value, step.action);
+      if(step.action){
+        robot.keyToggle(step.value, step.action);
+      }else{
+        robot.keyToggle(step.value);
+      }
       break;
 
       // 等待
