@@ -1,6 +1,13 @@
 /*
  * ICD 联合诊断拆分 AI 审核（rule-process 插件版 · 流式 yield · 只产出 JSONL）
  *
+ * ══════════════════════════════════════════════════════════════
+ * 2.0.0 改造说明（相对 1.0.0）：仅把"调模型 + 解析 + 单条审核"三处
+ * 内部换成 LangChain.js（ChatOpenAI + JsonOutputParser + withRetry），
+ * 对外契约（mode:'stream'、async function* process、节点 yield 形状、
+ * 下游 jsonl2xlsx）完全不变。目标：更稳的解析与重试，不引入 Graph。
+ * ══════════════════════════════════════════════════════════════
+ *
  * 职责边界：本插件只负责"AI 审核 → reviewed.jsonl"，
  * JSONL 转 Excel 由下游插件 jsonl2xlsx 完成。
  * 链路：icdCheck（result.xlsx）→ icdAI（reviewed.jsonl）→ jsonl2xlsx（reviewed.xlsx）
@@ -24,19 +31,28 @@
 const path = require('path');
 const xlsx = require('xlsx');
 
+// ── LangChain.js（仅替换调模型/解析/重试三处）────────────────────
+// 注意：以下依赖需安装（见底部 rely 字段）。未安装时本插件 require 阶段即报错，
+// 属于预期行为，安装后即可加载。
+const { ChatOpenAI } = require('@langchain/openai');
+const { JsonOutputParser } = require('@langchain/core/output_parsers');
+const { SystemMessage, HumanMessage } = require('@langchain/core/messages');
+
 // ══════════════════════════════════════════════════════════════
 // 1. 配置
 // ══════════════════════════════════════════════════════════════
 const SETTINGS = {
-    apiUrl: 'http://127.0.0.1:7863/v1/chat/completions',
-    apiKey: 'Bearer WildWorkAPI',
+    apiUrl: 'http://127.0.0.1:7863/v1',
+    apiKey: 'WildWorkAPI',
     model: 'workbuddy/hy3',
     temperature: 0.1,
     maxTokens: 7000,
     timeoutMs: 60000,
     sleepMinMs: 200,
     sleepMaxMs: 800,
-    logEvery: 50
+    logEvery: 50,
+    // LangChain 重试策略：接口瞬时失败（超时/5xx/网络）自动重试
+    retryAttempts: 0
 };
 
 const SYSTEM_PROMPT =
@@ -64,6 +80,10 @@ function readExcel(filePath) {
     return xlsx.utils.sheet_to_json(worksheet);
 }
 
+/**
+ * 容忍式 JSON 提取（作为 JsonOutputParser 失败时的兜底）。
+ * 处理 ```json 代码块、前后多余文字，支持数组或单对象。
+ */
 function extractJson(replyText) {
     const cleaned = String(replyText).replace(/```json|```/g, '').trim();
     const arrayStart = cleaned.indexOf('[');
@@ -102,48 +122,41 @@ function makeJsonlNode(outputNodeTemplate, record, mode) {
 
 
 // ══════════════════════════════════════════════════════════════
-// 3. 调模型
+// 3. 调模型（★ LangChain.js 替换手写 fetch）
 // ══════════════════════════════════════════════════════════════
 
-async function callModel(messages) {
-    const controller = new AbortController();
-    const timeoutTimer = setTimeout(() => controller.abort(), SETTINGS.timeoutMs);
-    try {
-        const response = await fetch(SETTINGS.apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': SETTINGS.apiKey
-            },
-            body: JSON.stringify({
-                model: SETTINGS.model,
-                temperature: SETTINGS.temperature,
-                max_tokens: SETTINGS.maxTokens,
-                messages: messages
-            }),
-            signal: controller.signal
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+// 端点已是 OpenAI 兼容（/v1/chat/completions + messages/model/temperature/max_tokens），
+// ChatOpenAI 可直接接管，模型/密钥/地址一行不改语义。
+const lcApiKey = SETTINGS.apiKey.replace(/^Bearer\s+/i, '');                       // LangChain 自带 Bearer 前缀
+const lcBaseURL = SETTINGS.apiUrl.replace(/\/chat\/completions\/?$/i, '');         // → http://127.0.0.1:7863/v1
 
-        const responseData = await response.json();
-        const replyContent = responseData.choices
-            && responseData.choices[0]
-            && responseData.choices[0].message
-            && responseData.choices[0].message.content;
+const chatModel = new ChatOpenAI({
+    model: SETTINGS.model,
+    apiKey: lcApiKey,
+    configuration: { baseURL: lcBaseURL },
+    temperature: SETTINGS.temperature,
+    maxTokens: SETTINGS.maxTokens,
+    timeout: SETTINGS.timeoutMs,
+    maxRetries: 0                       // 关闭 SDK 内置重试，统一由 withRetry 管理策略
+});
 
-        const thinkContent = responseData.choices
-            && responseData.choices[0]
-            && responseData.choices[0].message
-            && responseData.choices[0].message.reasoning_content;
+// 显式重试：瞬时失败自动重试，最终仍失败才在 reviewOne 兜底层置"人工复审"
+const chatModelRetry = chatModel.withRetry({ stopAfterAttempt: SETTINGS.retryAttempts });
 
-        if (!replyContent) throw new Error('响应缺少 content');
-        return {
-            replyText:replyContent,
-            thinkText:thinkContent
-        };
-    } finally {
-        clearTimeout(timeoutTimer);
+// 容忍式 JSON 解析器（提示词已要求严格 JSON，这里做结构化兜底）
+const jsonParser = new JsonOutputParser();
+
+// 尝试从响应中取"思维链"（DeepSeek 兼容端点常放 reasoning_content）。
+// 注意：LangChain 默认不保证暴露该字段，取不到时 think 为 null，不影响主流程。
+function extractThink(response) {
+    if (!response) return null;
+
+    if (response.additional_kwargs && response.additional_kwargs.reasoning_content) {
+        return response.additional_kwargs.reasoning_content;
     }
+
+    if (response.reasoning) return response.reasoning;   // LangChain 较新版本的推理字段
+    return null;
 }
 
 
@@ -157,7 +170,7 @@ function buildPrompt(tasks) {
     ).join('\n');
 
     return `审核以下 ${tasks.length} 条拆分记录，判断每条"成分1+成分2"是否为联合诊断的合理拆分，以及结算时能否用联合编码代替两个成分编码。
-    
+
 
 判定：
 - 合理：成分均为联合编码的真实组成部分，组合后医学语义完全等价，无遗漏、无扩大，且属于官方合并编码或医保规则明确允许的联合替代。
@@ -178,20 +191,35 @@ ${recordLines}
 
 async function reviewOne(singleTask) {
     try {
-        const {replyText,thinkText} = await callModel([
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: buildPrompt([singleTask]) }
+        const response = await chatModelRetry.invoke([
+            new SystemMessage(SYSTEM_PROMPT),
+            new HumanMessage(buildPrompt([singleTask]))
         ]);
-        const parsedData = extractJson(replyText);
-        const entry = Array.isArray(parsedData) ? parsedData[0] : parsedData;
-        const isValidVerdict = entry && ALL_VERDICTS.indexOf(entry.verdict) >= 0;
 
+        const replyText = typeof response.content === 'string'
+            ? response.content
+            : JSON.stringify(response.content);
+
+        const thinkText = extractThink(response);
+
+        // ★ 更稳的解析：优先 JsonOutputParser，失败回退容忍式 extractJson
+        let entry = null;
+        try {
+            const parsed = await jsonParser.parse(replyText);
+            entry = Array.isArray(parsed) ? parsed[0] : parsed;
+        } catch (parseErr) {
+            const fallback = extractJson(replyText);
+            entry = Array.isArray(fallback) ? fallback[0] : fallback;
+        }
+
+        const isValidVerdict = entry && ALL_VERDICTS.indexOf(entry.verdict) >= 0;
         return {
             verdict: isValidVerdict ? entry.verdict : VERDICT_MANUAL,
             reason: isValidVerdict ? (entry.reason || '') : '模型输出无法解析',
             think: thinkText
         };
     } catch (error) {
+        // withRetry 重试耗尽后的最终兜底
         return {
             verdict: VERDICT_MANUAL,
             reason: '接口失败:' + error.message
@@ -364,10 +392,10 @@ async function* writingRules(inputArray, outputNodeTemplate) {
 
 module.exports = {
     name: 'icdAI',
-    version: '1.0.0',
+    version: '2.0.0',
     mode: 'stream',
     process: writingRules,
-    description: 'ICD 联合诊断拆分 AI 审核（流式 yield · 只产出 JSONL）：逐条判定"联合诊断=成分1+成分2"是否成立，每条结论（含原行数据）通过 yield 交给框架追加写 reviewed.jsonl；Excel 转换由下游 jsonl2xlsx 插件完成',
+    description: 'ICD 联合诊断拆分 AI 审核（流式 yield · 只产出 JSONL · LangChain.js 版）：内部以 ChatOpenAI + JsonOutputParser + withRetry 替换手写 fetch，对外契约与 1.0.0 完全一致；逐条判定"联合诊断=成分1+成分2"是否成立',
     notes: {
         node: '18.20.4',
         tips: [
@@ -375,11 +403,15 @@ module.exports = {
             '输出：reviewed.jsonl（框架流式追加）+ reviewed.json（运行摘要）',
             'JSONL 记录自包含：每行 = {rowIdx, ...原12列, AI评审, AI理由}，jsonl2xlsx 可直接转表格行',
             'AI评审=合理：两成分为联合诊断真实组成；不合理：拆分错误/无关；人工复审：模型无法确定或接口失败',
-            '处理策略：逐条送审，1条/请求；每条之间随机等待 200~800ms；失败直接兜底"人工复审"',
+            '处理策略：逐条送审，1条/请求；每条之间随机等待 200~800ms；失败经 withRetry 重试后仍失败则兜底"人工复审"',
+            '更稳点(LangChain)：JsonOutputParser 优先解析、失败回退容忍式 extractJson；接口瞬时失败自动重试 3 次',
             '流式落地：每条结论通过 yield 输出，框架负责 append 到 reviewed.jsonl，中途崩溃已落盘部分不丢',
             '链路：icdCheck（result.xlsx）→ icdAI（reviewed.jsonl）→ jsonl2xlsx（reviewed.xlsx）',
             '注意：关联得分、灰度标记、匹配方式不发送给模型（不可信字段）',
-            '接口地址/密钥/sleep 区间/logEvery 等集中在顶部 SETTINGS，运行前按需调整'
+            '依赖：@langchain/openai、@langchain/core（见 rely，二者必须版本配对）；端点须为 OpenAI 兼容',
+            '版本配对（已核对 npm 2026-09）：@langchain/openai@^1.5.13 要求 @langchain/core@^1.2.11，且 openai@1.x 要求 Node>=22',
+            '若插件实际跑在 Node 18（非框架的 node22 target），请改用旧线 @langchain/openai@^0.3.17 + @langchain/core@^0.3.0',
+            '已知缺口：自定义端点 workbuddy/hy3-x 未必暴露 reasoning_content，AI思考列可能为空（不影响主流程）'
         ]
     },
     input: {
@@ -390,5 +422,9 @@ module.exports = {
         normExt: 'jsonl文件',
         format: 'reviewed.jsonl：每行 {rowIdx, ...原12列, AI评审(合理|不合理|人工复审), AI理由}；另有 reviewed.json 运行摘要'
     },
-    rely: { 'xlsx': '0.18.0' }
+    rely: {
+        'xlsx': '0.18.0',
+        '@langchain/openai': '1.5.13',
+        '@langchain/core': '1.2.11'
+    }
 };
