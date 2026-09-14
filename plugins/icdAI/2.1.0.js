@@ -72,7 +72,7 @@ const SETTINGS = {
     requestSleepMaxMs: 60 * 1000 * 5,   // 5 分钟
 
     // LangChain 重试策略：接口瞬时失败（超时/5xx/网络）自动重试
-    retryAttempts: 1
+    retryAttempts: 0
 };
 
 const SYSTEM_PROMPT =
