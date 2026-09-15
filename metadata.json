@@ -404,6 +404,10 @@
       "1.0.0": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdCheck2trauma/1.0.0.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdCheck2trauma/1.0.0.js"
+      },
+      "1.0.1": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdCheck2trauma/1.0.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdCheck2trauma/1.0.1.js"
       }
     }
   },
@@ -484,6 +488,18 @@
       "1.0.0": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/json2xlsx/1.0.0.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/json2xlsx/1.0.0.js"
+      }
+    }
+  },
+  "jsonl2xlsx": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/jsonl2xlsx/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/jsonl2xlsx/1.0.0.js"
+      },
+      "1.1.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/jsonl2xlsx/1.1.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/jsonl2xlsx/1.1.0.js"
       }
     }
   },
