@@ -829,7 +829,7 @@ function writingRules(inputArray, outputNodeTemplate) {
 }
 
 module.exports = {
-  name: 'icdCheck',
+  name: 'icdCheck2union',
   version: '1.0.0',
   process: writingRules,
   description: 'ICD 联合诊断发现器：基于 bigram 倒排索引(blocking)+成分包含度(range)，从 ICD 名称表中自动发现"联合诊断=A+B"的预结果（精确切分 exact + 兜底 loose + 子序列 subseq + 模糊配对 ngram），供后续人工/AI 筛选',

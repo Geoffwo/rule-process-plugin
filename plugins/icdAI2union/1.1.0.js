@@ -32,10 +32,11 @@ const SETTINGS = {
     apiKey: 'Bearer WildWorkAPI',
     model: 'workbuddy/hy3',
     temperature: 0.1,
-    maxTokens: 7000,
-    timeoutMs: 60000,
+    maxTokens: 10000,
+    timeoutMs: 600000,
     sleepMinMs: 200,
     sleepMaxMs: 800,
+    batchSize: 8,
     logEvery: 50
 };
 
@@ -86,6 +87,54 @@ function randomSleep(minMs, maxMs) {
 }
 
 /**
+ * 流式逐行解析旧 reviewed.jsonl → Set<rowIdx>（断点续跑：已评行号集合）。
+ * 边读边按 '\n' 拆行、逐行 JSON.parse，只取 rowIdx 即弃记录本体，
+ * 内存只驻留行号集合（不攒全文、不驻留记录对象，避免大文件 OOM）。
+ * 坏行/非对象行跳过。
+ */
+async function readJsonlStream(source) {
+    const doneRowIdxs = new Set();
+
+    // 输入目录无旧 reviewed.jsonl（首次全量跑）→ 空 Set，所有行都判待评
+    if (!source) return doneRowIdxs;
+
+    let stream;
+    try { stream = source.stream(); } catch (e) { return doneRowIdxs; }
+
+    // buffer 只保留"尚未凑齐一行"的残片，不攒全文（避免大文件 OOM）
+    let buffer = '';
+    for await (const chunk of stream) {
+        buffer += chunk;
+        let nl;
+        // 内层循环：把本次 chunk 带来的所有完整行全部切出处理
+        // 切分只认真实换行字节 0x0A；字段内容里的换行已被 JSON.stringify
+        // 转义成 \n 字面量（反斜杠+n 两个字符），不会被误切
+        while ((nl = buffer.indexOf('\n')) >= 0) {
+            const line = buffer.slice(0, nl).trim();
+            buffer = buffer.slice(nl + 1);
+            if (!line) continue;   // 空行跳过
+            try {
+                const rec = JSON.parse(line);
+                // 只取行号即弃记录；存在即最终，不判定内容有效性
+                if (rec && typeof rec.rowIdx === 'number') doneRowIdxs.add(rec.rowIdx);
+            } catch (e) { /* 坏行跳过 */ }
+        }
+    }
+
+    return doneRowIdxs;
+}
+
+/**
+ * 判定某行是否需要评（断点续跑/删行重评的统一入口）。
+ * 纯存在性判断：rowIdx 已在旧 jsonl 中 → 跳过（存在即最终，已有内容不重跑、
+ * 不重复追加）；不存在（从未评过 / 被手动删除）→ 待评。
+ * 想重评某行（含接口失败的行）→ 手动删除该行后重跑。
+ */
+function shouldRerun(doneRowIdxs, rowIdx) {
+    return !doneRowIdxs.has(rowIdx);
+}
+
+/**
  * 构造一条 JSONL 节点的 yield 载荷
  * 框架按 content 原样追加写 reviewed.jsonl（不补换行），
  * 因此这里必须自带 '\n'，否则所有记录挤在同一行、下游解析失败
@@ -123,6 +172,7 @@ async function callModel(messages) {
             }),
             signal: controller.signal
         });
+
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const responseData = await response.json();
@@ -158,10 +208,9 @@ function buildPrompt(tasks) {
 
     return `审核以下 ${tasks.length} 条拆分记录，判断每条"成分1+成分2"是否为联合诊断的合理拆分，以及结算时能否用联合编码代替两个成分编码。
     
-
 判定：
 - 合理：成分均为联合编码的真实组成部分，组合后医学语义完全等价，无遗漏、无扩大，且属于官方合并编码或医保规则明确允许的联合替代。
-- 人工复审：成分与联合编码兼容但信息不完整、成分未完全覆盖、语义模糊、专业性强、无法确定，或结算规则不明确。
+- 人工复审：成分与联合编码兼容但信息不完整、成分未完全覆盖(联合编码的范围明显大于两个成分覆盖的总和)、语义模糊、专业性强、无法确定，或结算规则不明确。
 - 不合理：成分与联合编码无关、拆分错误、成分重复、语义矛盾、单成分自身范围超出联合编码。
 
 记录：
@@ -173,66 +222,93 @@ ${recordLines}
 
 
 // ══════════════════════════════════════════════════════════════
-// 5. 审核一条 / 审核全部（★ 流式生成器）
+// 5. 批次审核 / 审核全部（★ 流式生成器）
 // ══════════════════════════════════════════════════════════════
 
-async function reviewOne(singleTask) {
+async function reviewBatch(tasks) {
     try {
         const {replyText,thinkText} = await callModel([
             { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: buildPrompt([singleTask]) }
+            { role: 'user', content: buildPrompt(tasks) }
         ]);
         const parsedData = extractJson(replyText);
-        const entry = Array.isArray(parsedData) ? parsedData[0] : parsedData;
-        const isValidVerdict = entry && ALL_VERDICTS.indexOf(entry.verdict) >= 0;
+        const entries = Array.isArray(parsedData) ? parsedData : (parsedData ? [parsedData] : []);
 
-        return {
-            verdict: isValidVerdict ? entry.verdict : VERDICT_MANUAL,
-            reason: isValidVerdict ? (entry.reason || '') : '模型输出无法解析',
-            think: thinkText
-        };
+        // 按 idx 对齐到 tasks 位置（idx 从 1 开始）
+        const verdictMap = new Map();
+        for (const entry of entries) {
+            const isValidVerdict = entry && ALL_VERDICTS.indexOf(entry.verdict) >= 0;
+            const idx = Number(entry && entry.idx);
+            if (Number.isInteger(idx) && idx >= 1 && idx <= tasks.length) {
+                verdictMap.set(idx, {
+                    verdict: isValidVerdict ? entry.verdict : VERDICT_MANUAL,
+                    reason: isValidVerdict ? (entry.reason || '') : '模型输出无法解析',
+                    think: thinkText
+                });
+            }
+        }
+
+        // 组装对齐后的结果数组，缺失项标「人工复审 · 模型漏项」
+        const results = [];
+        for (let i = 0; i < tasks.length; i++) {
+            const verdict = verdictMap.get(i + 1);
+            results.push(verdict || {
+                verdict: VERDICT_MANUAL,
+                reason: '模型漏项',
+                think: thinkText
+            });
+        }
+        return results;
     } catch (error) {
-        return {
+        // 整批失败，全部兜底人工复审（不做单条回退）
+        return tasks.map(() => ({
             verdict: VERDICT_MANUAL,
             reason: '接口失败:' + error.message
-        };
+        }));
     }
 }
 
 /**
- * 逐条审核（生成器）。
- * 每审出一条结论，就 yield 一个 JSONL 节点给框架落盘。
+ * 批次审核（生成器）。
+ * 每批审完后，逐条 yield 一个 JSONL 节点给框架落盘。
  * 记录自包含（原行数据 + 结论），供下游 jsonl2xlsx 直接转表格行。
- * 每条之间随机 sleep。
+ * 每批之间随机 sleep（不是每条）。
  */
 async function* reviewAll(tasks, sourceRows, outputNodeTemplate, statistics) {
     const totalCount = tasks.length;
     const startTime = Date.now();
+    const batchSize = SETTINGS.batchSize;
+    let processedCount = 0;
 
-    for (let i = 0; i < totalCount; i++) {
-        const singleTask = tasks[i];
-        const verdict = await reviewOne(singleTask);
+    for (let i = 0; i < totalCount; i += batchSize) {
+        const batch = tasks.slice(i, i + batchSize);
+        const verdicts = await reviewBatch(batch);
 
-        if (verdict.verdict === VERDICT_OK) statistics.ok++;
-        else if (verdict.verdict === VERDICT_BAD) statistics.bad++;
-        else statistics.manual++;
+        for (let j = 0; j < batch.length; j++) {
+            const singleTask = batch[j];
+            const verdict = verdicts[j];
 
-        // ★ 流式 yield：交给框架追加写盘
-        yield makeJsonlNode(outputNodeTemplate, {
-            rowIdx: singleTask.rowIdx,
-            ...sourceRows[singleTask.rowIdx],
-            'AI评审': verdict.verdict,
-            'AI理由': verdict.reason,
-            'AI思考（调试模型使用）': verdict.think,
-        }, 'a');
+            if (verdict.verdict === VERDICT_OK) statistics.ok++;
+            else if (verdict.verdict === VERDICT_BAD) statistics.bad++;
+            else statistics.manual++;
 
-        const processedCount = i + 1;
-        if (processedCount % SETTINGS.logEvery === 0 || processedCount === totalCount) {
-            const elapsedSec = Math.round((Date.now() - startTime) / 1000);
-            console.log(`AI审核进度: ${processedCount}/${totalCount}（已耗时 ${elapsedSec}s）`);
+            // ★ 流式 yield：交给框架追加写盘
+            yield makeJsonlNode(outputNodeTemplate, {
+                rowIdx: singleTask.rowIdx,
+                ...sourceRows[singleTask.rowIdx],
+                'AI评审': verdict.verdict,
+                'AI理由': verdict.reason,
+                'AI思考（调试模型使用）': verdict.think,
+            }, 'a');
+
+            processedCount++;
+            if (processedCount % SETTINGS.logEvery === 0 || processedCount === totalCount) {
+                const elapsedSec = Math.round((Date.now() - startTime) / 1000);
+                console.log(`AI审核进度: ${processedCount}/${totalCount}（已耗时 ${elapsedSec}s）`);
+            }
         }
 
-        if (processedCount < totalCount) {
+        if (i + batchSize < totalCount) {
             await randomSleep(SETTINGS.sleepMinMs, SETTINGS.sleepMaxMs);
         }
     }
@@ -278,17 +354,20 @@ function buildTasks(sourceRows) {
 // ══════════════════════════════════════════════════════════════
 
 async function* writingRules(inputArray, outputNodeTemplate) {
-    const outputDir = outputNodeTemplate.path;
-    const jsonlPath = path.join(outputDir, 'reviewed.jsonl');   // 框架写到这里
+    const outputDir = outputNodeTemplate.path // 临时目录绝对路径
+    const inputPath = path.join(outputDir, '../inputDir');
+    const jsonlPath = path.join(inputPath, 'reviewed.jsonl');   // 框架写到这里
 
     // 步骤1：找到上一规则输出的 result.xlsx
-    const sourceFile = inputArray.find(
-        file => file.normExt === 'xlsx' && file.name === 'result'
-    );
+    const sourceFile = inputArray.find(file => file.normExt === 'xlsx' && file.name === 'result');
     if (!sourceFile) {
         yield [{ ...outputNodeTemplate, content: '错误: 未找到 result.xlsx，请先运行 icdCheck 规则生成预结果' }];
         return;
     }
+
+    const jsonlFile = inputArray.find(file => file.normExt === 'jsonl' && file.name === 'reviewed');
+    // ★ 断点续跑：流式读旧 reviewed.jsonl → Set<rowIdx>（存在即最终），供后续过滤"已评过的行"
+    const doneRowIdxs = await readJsonlStream(jsonlFile);
 
     // 步骤2：读 Excel
     const sourceRows = readExcel(sourceFile.path);
@@ -298,27 +377,32 @@ async function* writingRules(inputArray, outputNodeTemplate) {
     }
     console.log(`已加载 ${sourceRows.length} 条记录（来自 ${sourceFile.path}）\n`);
 
-    // 步骤3：造任务
-    const taskBuildResult = buildTasks(sourceRows);
-    const tasks = taskBuildResult.tasks;
-    const preVerdicts = taskBuildResult.preVerdicts;
-    console.log(`待审核 ${tasks.length} 条，跳过 ${preVerdicts.size} 条（名称缺失）`);
+    // 步骤3：造任务，并按存在性过滤（断点续跑：旧 jsonl 已有的行号一律跳过，存在即最终）
+    const taskBuild = buildTasks(sourceRows);
+
+    //过滤后的要执行任务
+    const tasks = taskBuild.tasks.filter(task => shouldRerun(doneRowIdxs, task.rowIdx));
+    //过滤后的要跳过任务
+    const preVerdicts = new Map(
+        [...taskBuild.preVerdicts].filter(
+            ([rowIdx]) => shouldRerun(doneRowIdxs, rowIdx)
+        )
+    );
+    const skipped = taskBuild.tasks.length - tasks.length;
+    console.log(`待审核 ${tasks.length} 条，跳过已评估 ${skipped} 条`);
 
     const statistics = { ok: 0, bad: 0, manual: preVerdicts.size };
 
-    // ★ 步骤4：先 yield 一个 'w' 节点清空 JSONL（空内容覆盖写，不产生垃圾行）
-    yield [{
-        ...outputNodeTemplate,
-        fileName: 'reviewed',
-        normExt: 'jsonl',
-        content: '',
-        option: { flag: 'w' }
-    }];
-    console.log(`流式输出文件已就绪: ${jsonlPath}\n`);
+    // ★ 步骤4：断点续跑模式——不再清空文件，仅追加本次新评的行（保留旧行）
+
+    console.log(`断点续跑文件已就绪: ${jsonlPath}\n`);
 
     // ★ 步骤5：前置结论（名称缺失的）先落盘，同样携带原行数据（自包含记录）
     for (const [rowIdx, verdict] of preVerdicts) {
-        yield makeJsonlNode(outputNodeTemplate, {
+        yield makeJsonlNode({
+            ...outputNodeTemplate,
+            path:inputPath
+        }, {
             rowIdx: rowIdx,
             ...sourceRows[rowIdx],
             'AI评审': verdict.verdict,
@@ -336,7 +420,6 @@ async function* writingRules(inputArray, outputNodeTemplate) {
     console.log(`AI审核完成，耗时 ${elapsedSec}s`);
     console.log(`合理: ${statistics.ok}，不合理: ${statistics.bad}，人工复审: ${statistics.manual}`);
     console.log('JSONL 文件:', jsonlPath);
-    console.log('后续: 将 reviewed.jsonl 放入输入目录，运行 jsonl2xlsx 规则生成 reviewed.xlsx');
 
     // ★ 步骤7：yield 运行摘要
     yield [{
@@ -346,10 +429,11 @@ async function* writingRules(inputArray, outputNodeTemplate) {
         content: JSON.stringify({
             sourceRows: sourceRows.length,
             reviewed: tasks.length,
-            skipped: preVerdicts.size,
+            skippedEvaluated: skipped,
             reasonable: statistics.ok,
             unreasonable: statistics.bad,
             manualReview: statistics.manual,
+            resumeMode: skipped > 0 ? 'resume' : (doneRowIdxs.size > 0 ? 'full-resume' : 'full'),
             elapsedSeconds: elapsedSec,
             jsonlFile: jsonlPath,
             nextStep: '运行 jsonl2xlsx 规则将 reviewed.jsonl 转为 reviewed.xlsx'
@@ -363,11 +447,11 @@ async function* writingRules(inputArray, outputNodeTemplate) {
 // ══════════════════════════════════════════════════════════════
 
 module.exports = {
-    name: 'icdAI',
-    version: '1.0.0',
+    name: 'icdAI2union',
+    version: '1.1.0',
     mode: 'stream',
     process: writingRules,
-    description: 'ICD 联合诊断拆分 AI 审核（流式 yield · 只产出 JSONL）：逐条判定"联合诊断=成分1+成分2"是否成立，每条结论（含原行数据）通过 yield 交给框架追加写 reviewed.jsonl；Excel 转换由下游 jsonl2xlsx 插件完成',
+    description: 'ICD 联合诊断拆分 AI 审核（流式 yield · 只产出 JSONL）：断点续跑，逐条判定"联合诊断=成分1+成分2"是否成立，每条结论（含原行数据）通过 yield 交给框架追加写 reviewed.jsonl；Excel 转换由下游 jsonl2xlsx 插件完成',
     notes: {
         node: '18.20.4',
         tips: [
@@ -375,7 +459,8 @@ module.exports = {
             '输出：reviewed.jsonl（框架流式追加）+ reviewed.json（运行摘要）',
             'JSONL 记录自包含：每行 = {rowIdx, ...原12列, AI评审, AI理由}，jsonl2xlsx 可直接转表格行',
             'AI评审=合理：两成分为联合诊断真实组成；不合理：拆分错误/无关；人工复审：模型无法确定或接口失败',
-            '处理策略：逐条送审，1条/请求；每条之间随机等待 200~800ms；失败直接兜底"人工复审"',
+            '处理策略：批次送审，8条/批（SETTINGS.batchSize 可调）；每批之间随机等待 200~800ms；失败直接兜底"人工复审"；批次内缺失项标"模型漏项"',
+            '断点续跑：启动时读取已生成的 reviewed.jsonl，已有行号一律跳过（存在即最终，不判定内容），只评缺失的行并追加；想重评某行（含接口失败的行）→ 手动删除该行后重跑',
             '流式落地：每条结论通过 yield 输出，框架负责 append 到 reviewed.jsonl，中途崩溃已落盘部分不丢',
             '链路：icdCheck（result.xlsx）→ icdAI（reviewed.jsonl）→ jsonl2xlsx（reviewed.xlsx）',
             '注意：关联得分、灰度标记、匹配方式不发送给模型（不可信字段）',

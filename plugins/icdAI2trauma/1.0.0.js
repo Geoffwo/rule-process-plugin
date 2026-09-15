@@ -1,48 +1,32 @@
 /*
- * ICD 联合诊断拆分 AI 审核（rule-process 插件版 · 流式 yield · 只产出 JSONL）
+ * 外伤提醒知识库 AI 批量标注（rule-process 插件版 · 流式 yield · 只产出 JSONL）
  *
- * ══════════════════════════════════════════════════════════════
- * 2.0.0 改造说明（相对 1.0.0）：仅把"调模型 + 解析 + 重试"内部换成
- * LangChain.js（ChatOpenAI + JsonOutputParser + withRetry），
- * 对外契约（mode:'stream'、async function* process、节点 yield 形状、
- * 下游 jsonl2xlsx）完全不变。目标：更稳的解析与重试，不引入 Graph。
+ * 业务目标：对"规则预处理模块（icdCheck2trauma）"输出的候选集逐条判定 相关/无关，
+ * 剔除完全和外伤无关的条目，输出带标注结果的数据集用于入库。
  *
- * 2.0.0 功能适配（对齐 1.1.1）：在保留 LangChain 调用层的前提下，
- * 移植 1.1.1 的三项新能力——
- *   ① 断点续跑：流式读旧 reviewed.jsonl → Set<rowIdx>（存在即最终），
- *      只评缺失行并追加，不再清空文件；重评某行 → 手动删除该行后重跑
- *   ② 批次送审：batchSize 条/批，按 idx 对齐，缺失项标"模型漏项"，
- *      整批失败全部兜底"人工复审"（不做单条回退）
- *   ③ 防封延时：批间随机 10~30s；每 requestSleepEvery 次请求后
- *      长休息 3~5 分钟（设 0 禁用）
- * 同时对齐 1.1.1 的输出路径约定：reviewed.jsonl 写入 inputDir，
- * 供下游 jsonl2xlsx 直接作为输入拾取。
- * ══════════════════════════════════════════════════════════════
+ * 知识库用途：线上开单时弹窗提醒医生创建外伤申请单。
+ * 策略：优先召回、宁宽勿漏（仅弹窗提示，不强制）——判定时不确定一律判"相关"。
  *
- * 职责边界：本插件只负责"AI 审核 → reviewed.jsonl"，
+ * 职责边界：本插件只负责"AI 标注 → trauma.jsonl"，
  * JSONL 转 Excel 由下游插件 jsonl2xlsx 完成。
- * 链路：icdCheck（result.xlsx）→ icdAI（reviewed.jsonl）→ jsonl2xlsx（reviewed.xlsx）
+ * 链路：icdCheck2trauma（candidate.xlsx）→ traumaAILabel（trauma.jsonl）→ jsonl2xlsx（trauma.xlsx）
  *
  * 数据流（从上往下读）：
  *   writingRules（async function*）
- *     ├─ readExcel ← result.xlsx
+ *     ├─ readExcel ← candidate.xlsx
  *     ├─ buildTasks
- *     ├─ 流式读旧 reviewed.jsonl → 断点续跑过滤
- *     ├─ yield 前置结论（名称缺失的）
- *     ├─ for await reviewAll(...) → 每条结论 yield 给框架追加写 reviewed.jsonl
- *     └─ yield 运行摘要 reviewed.json
- *
- * 流式落地：
- *   - 每条结论通过 yield 交给框架，框架负责追加写 reviewed.jsonl
- *   - 中途崩溃，框架已落盘的部分不丢
+ *     ├─ 流式读旧 trauma.jsonl → 断点续跑过滤
+ *     ├─ yield 前置结论（编码/名称缺失的，标"相关"）
+ *     ├─ for await reviewAll(...) → 每条结论 yield 给框架追加写 trauma.jsonl
+ *     └─ yield 运行摘要 trauma.json
  *
  * JSONL 记录格式（自包含：每行一个扁平对象，jsonl2xlsx 可直接转表格行）：
- *   { "rowIdx": 行号, ...原12列, "AI评审": "合理|不合理|人工复审", "AI理由": "..." }
+ *   { "rowIdx": 行号, ...原候选列, "AI评审": "相关|无关", "AI理由": "..." }
  */
 const path = require('path');
 const xlsx = require('xlsx');
 
-// ── LangChain.js（仅替换调模型/解析/重试三处）────────────────────
+// ── LangChain.js ──────────────────────────────────────────────
 // 注意：以下依赖需安装（见底部 rely 字段）。未安装时本插件 require 阶段即报错，
 // 属于预期行为，安装后即可加载。
 const { ChatOpenAI } = require('@langchain/openai');
@@ -53,39 +37,40 @@ const { SystemMessage, HumanMessage } = require('@langchain/core/messages');
 // 1. 配置
 // ══════════════════════════════════════════════════════════════
 const SETTINGS = {
-    apiUrl: 'http://127.0.0.1:7863/v1',
+    apiUrl: 'http://127.0.0.1:7863/v1',//http://10.24.20.186:18090/qwen235b/v1
     apiKey: 'WildWorkAPI',
-    model: 'workbuddy/hy3',
+    model: 'workbuddy/hy3',//Qwen3-235B-A22B-Q4_K_M.gguf
     temperature: 0.1,
     maxTokens: 10000,
     timeoutMs: 60 * 1000 * 10,   // 10 分钟
 
-    // 普通批间休息（对齐 1.1.1 防封节奏）
-    sleepMinMs: 10 * 1000,       // 10 秒
-    sleepMaxMs: 30 * 1000,       // 30 秒
-    batchSize: 8,
+    // 批次送审（每批条数）
+    batchSize: 16,
+    // 批间随机休息（防封）
+    sleepMinMs: 0.5 * 1000,       // 1 秒
+    sleepMaxMs: 0.8 * 1000,       // 3 秒
     logEvery: 50,
 
     // 每 requestSleepEvery 次模型请求后，长休息 requestSleepMinMs~requestSleepMaxMs
-    requestSleepEvery: 8,        // 每 8 次请求长休一次；设 0 表示禁用
-    requestSleepMinMs: 60 * 1000 * 3,   // 3 分钟
-    requestSleepMaxMs: 60 * 1000 * 5,   // 5 分钟
+    requestSleepEvery: 50,       // 每 10 次请求长休一次；设 0 禁用
+    requestSleepMinMs: 60 * 1000 * 0.5,   // 3 分钟
+    requestSleepMaxMs: 60 * 1000 * 1.5,   // 5 分钟
 
     // LangChain 重试策略：接口瞬时失败（超时/5xx/网络）自动重试
-    retryAttempts: 0
+    retryAttempts: 0,
 };
 
+// ★ 外伤相关性筛查 prompt：二分类（相关/无关），优先召回、宁宽勿漏
 const SYSTEM_PROMPT =
-    '你是ICD联合诊断拆分审核助手。' +
-    '判断给定的拆分【联合编码 = 成分1 + 成分2】在医学语义上是否成立，并判断是否属于官方合并编码或医保规则明确允许的联合替代。' +
-    '仅依据编码名称、编码分类和明确的医保编码规则判断，不得依据预打分。' +
-    '若结算规则不明确，输出“人工复审”。' +
+    '你是外伤相关性筛查助手。' +
+    '判断给定的 ICD10 诊断条目是否与"外伤"相关（即是否需要提醒医生创建外伤申请单）。' +
+    '策略：优先召回、宁宽勿漏——只要与外伤存在任何可能关联，一律判"相关"；只有明确与外伤完全无关才判"无关"。' +
+    '本判定仅用于线上弹窗提示，不强制。' +
     '严格按用户要求的JSON格式输出，不要输出任何多余文字。';
 
-const VERDICT_OK = '合理';
-const VERDICT_BAD = '不合理';
-const VERDICT_MANUAL = '人工复审';
-const ALL_VERDICTS = [VERDICT_OK, VERDICT_BAD, VERDICT_MANUAL];
+const VERDICT_RELEVANT = '相关';
+const VERDICT_IRRELEVANT = '无关';
+const ALL_VERDICTS = [VERDICT_RELEVANT, VERDICT_IRRELEVANT];
 
 
 // ══════════════════════════════════════════════════════════════
@@ -126,7 +111,7 @@ function randomSleep(minMs, maxMs) {
 }
 
 /**
- * 流式逐行解析旧 reviewed.jsonl → Set<rowIdx>（断点续跑：已评行号集合）。
+ * 流式逐行解析旧 trauma.jsonl → Set<rowIdx>（断点续跑：已评行号集合）。
  * 边读边按 '\n' 拆行、逐行 JSON.parse，只取 rowIdx 即弃记录本体，
  * 内存只驻留行号集合（不攒全文、不驻留记录对象，避免大文件 OOM）。
  * 坏行/非对象行跳过。
@@ -134,7 +119,7 @@ function randomSleep(minMs, maxMs) {
 async function readJsonlStream(source) {
     const doneRowIdxs = new Set();
 
-    // 输入目录无旧 reviewed.jsonl（首次全量跑）→ 空 Set，所有行都判待评
+    // 输入目录无旧 trauma.jsonl（首次全量跑）→ 空 Set，所有行都判待评
     if (!source) return doneRowIdxs;
 
     let stream;
@@ -145,9 +130,6 @@ async function readJsonlStream(source) {
     for await (const chunk of stream) {
         buffer += chunk;
         let nl;
-        // 内层循环：把本次 chunk 带来的所有完整行全部切出处理
-        // 切分只认真实换行字节 0x0A；字段内容里的换行已被 JSON.stringify
-        // 转义成 \n 字面量（反斜杠+n 两个字符），不会被误切
         while ((nl = buffer.indexOf('\n')) >= 0) {
             const line = buffer.slice(0, nl).trim();
             buffer = buffer.slice(nl + 1);
@@ -165,8 +147,8 @@ async function readJsonlStream(source) {
 
 /**
  * 判定某行是否需要评（断点续跑/删行重评的统一入口）。
- * 纯存在性判断：rowIdx 已在旧 jsonl 中 → 跳过（存在即最终，已有内容不重跑、
- * 不重复追加）；不存在（从未评过 / 被手动删除）→ 待评。
+ * 纯存在性判断：rowIdx 已在旧 jsonl 中 → 跳过（存在即最终）；
+ * 不存在（从未评过 / 被手动删除）→ 待评。
  * 想重评某行（含接口失败的行）→ 手动删除该行后重跑。
  */
 function shouldRerun(doneRowIdxs, rowIdx) {
@@ -175,13 +157,13 @@ function shouldRerun(doneRowIdxs, rowIdx) {
 
 /**
  * 构造一条 JSONL 节点的 yield 载荷
- * 框架按 content 原样追加写 reviewed.jsonl（不补换行），
+ * 框架按 content 原样追加写 trauma.jsonl（不补换行），
  * 因此这里必须自带 '\n'，否则所有记录挤在同一行、下游解析失败
  */
 function makeJsonlNode(outputNodeTemplate, record, mode) {
     return [{
         ...outputNodeTemplate,
-        fileName: 'reviewed',
+        fileName: 'trauma',
         normExt: 'jsonl',
         content: JSON.stringify(record) + '\n',
         option: { flag: mode }       // 'w' 清空 / 'a' 追加
@@ -190,13 +172,13 @@ function makeJsonlNode(outputNodeTemplate, record, mode) {
 
 
 // ══════════════════════════════════════════════════════════════
-// 3. 调模型（★ LangChain.js 替换手写 fetch）
+// 3. 调模型（LangChain.js）
 // ══════════════════════════════════════════════════════════════
 
 // 端点已是 OpenAI 兼容（/v1/chat/completions + messages/model/temperature/max_tokens），
 // ChatOpenAI 可直接接管，模型/密钥/地址一行不改语义。
-const lcApiKey = SETTINGS.apiKey.replace(/^Bearer\s+/i, '');                       // LangChain 自带 Bearer 前缀
-const lcBaseURL = SETTINGS.apiUrl.replace(/\/chat\/completions\/?$/i, '');         // → http://127.0.0.1:7863/v1
+const lcApiKey = SETTINGS.apiKey.replace(/^Bearer\s+/i, '');                  // LangChain 自带 Bearer 前缀
+const lcBaseURL = SETTINGS.apiUrl.replace(/\/chat\/completions\/?$/i, '');    // → http://127.0.0.1:7863/v1
 
 const chatModel = new ChatOpenAI({
     model: SETTINGS.model,
@@ -208,22 +190,17 @@ const chatModel = new ChatOpenAI({
     maxRetries: 0                       // 关闭 SDK 内置重试，统一由 withRetry 管理策略
 });
 
-// 显式重试：瞬时失败自动重试，最终仍失败才在 reviewBatch 兜底层置"人工复审"
 const chatModelRetry = chatModel.withRetry({ stopAfterAttempt: SETTINGS.retryAttempts });
-
-// 容忍式 JSON 解析器（提示词已要求严格 JSON，这里做结构化兜底）
 const jsonParser = new JsonOutputParser();
 
 // 尝试从响应中取"思维链"（DeepSeek 兼容端点常放 reasoning_content）。
-// 注意：LangChain 默认不保证暴露该字段，取不到时 think 为 null，不影响主流程。
+// 取不到时 think 为 null，不影响主流程。
 function extractThink(response) {
     if (!response) return null;
-
     if (response.additional_kwargs && response.additional_kwargs.reasoning_content) {
         return response.additional_kwargs.reasoning_content;
     }
-
-    if (response.reasoning) return response.reasoning;   // LangChain 较新版本的推理字段
+    if (response.reasoning) return response.reasoning;
     return null;
 }
 
@@ -234,22 +211,23 @@ function extractThink(response) {
 
 function buildPrompt(tasks) {
     const recordLines = tasks.map((task, position) =>
-        `【${position + 1}】联合诊断：${task.unionCode} ${task.union}；成分1：${task.part1Code} ${task.part1}；成分2：${task.part2Code} ${task.part2}；`
+        `【${position + 1}】编码：${task.code}；名称：${task.name}`
     ).join('\n');
 
-    return `审核以下 ${tasks.length} 条拆分记录，判断每条"成分1+成分2"是否为联合诊断的合理拆分，以及结算时能否用联合编码代替两个成分编码。
-
+    return `逐条判断以下 ${tasks.length} 条 ICD10 诊断条目是否与"外伤"相关（是否需要提醒医生创建外伤申请单）。
 
 判定：
-- 合理：成分均为联合编码的真实组成部分，组合后医学语义完全等价，无遗漏、无扩大，且属于官方合并编码或医保规则明确允许的联合替代。
-- 人工复审：成分与联合编码兼容但信息不完整、成分未完全覆盖(联合编码的范围明显大于两个成分覆盖的总和)、语义模糊、专业性强、无法确定，或结算规则不明确。
-- 不合理：成分与联合编码无关、拆分错误、成分重复、语义矛盾、单成分自身范围超出联合编码。
+- 相关：诊断涉及损伤、创伤、骨折、脱位、烧伤、烫伤、冻伤、电击、中毒、动物咬蜇伤、窒息、溺水、外因致伤（交通事故/跌倒/暴力等）、创伤并发症等外伤范畴。只要与外伤存在任何可能关联，一律判"相关"。
+- 无关：诊断与外伤完全无关（如内科疾病、肿瘤、慢性病、感染性疾病、先天性疾病等非外伤条目）。
+
+原则：优先召回、宁宽勿漏。不确定时判"相关"。只有明确与外伤完全无关才判"无关"。
+注意：本判定仅用于线上弹窗提示，不强制。
 
 记录：
 ${recordLines}
 
 输出JSON数组，共 ${tasks.length} 项，序号必须与记录一致，每项格式：
-{"idx":记录序号,"verdict":"合理|不合理|人工复审","reason":"20字以内理由"}`;
+{"idx":记录序号,"verdict":"相关|无关","reason":"20字以内理由"}`;
 }
 
 
@@ -270,7 +248,7 @@ async function reviewBatch(tasks) {
 
         const thinkText = extractThink(response);
 
-        // ★ 更稳的解析：优先 JsonOutputParser，失败回退容忍式 extractJson
+        // 更稳的解析：优先 JsonOutputParser，失败回退容忍式 extractJson
         let parsedData = null;
         try {
             parsedData = await jsonParser.parse(replyText);
@@ -286,28 +264,30 @@ async function reviewBatch(tasks) {
             const idx = Number(entry && entry.idx);
             if (Number.isInteger(idx) && idx >= 1 && idx <= tasks.length) {
                 verdictMap.set(idx, {
-                    verdict: isValidVerdict ? entry.verdict : VERDICT_MANUAL,
+                    // ★ 宁宽勿漏：verdict 无效时默认"相关"
+                    verdict: isValidVerdict ? entry.verdict : VERDICT_RELEVANT,
                     reason: isValidVerdict ? (entry.reason || '') : '模型输出无法解析',
                     think: thinkText
                 });
             }
         }
 
-        // 组装对齐后的结果数组，缺失项标「人工复审 · 模型漏项」
+        // 组装对齐后的结果数组，缺失项标「相关 · 模型漏项」（宁宽勿漏）
         const results = [];
         for (let i = 0; i < tasks.length; i++) {
             const verdict = verdictMap.get(i + 1);
             results.push(verdict || {
-                verdict: VERDICT_MANUAL,
+                verdict: VERDICT_RELEVANT,
                 reason: '模型漏项',
                 think: thinkText
             });
         }
         return results;
     } catch (error) {
-        // withRetry 重试耗尽后整批失败，全部兜底人工复审（不做单条回退）
+        // ★ 宁宽勿漏：接口失败整批默认"相关"（不做单条回退）
+        // 接口失败不等于"无关"，保留为"相关"避免漏召回
         return tasks.map(() => ({
-            verdict: VERDICT_MANUAL,
+            verdict: VERDICT_RELEVANT,
             reason: '接口失败:' + error.message
         }));
     }
@@ -335,9 +315,8 @@ async function* reviewAll(tasks, sourceRows, outputNodeTemplate, statistics) {
             const singleTask = batch[j];
             const verdict = verdicts[j];
 
-            if (verdict.verdict === VERDICT_OK) statistics.ok++;
-            else if (verdict.verdict === VERDICT_BAD) statistics.bad++;
-            else statistics.manual++;
+            if (verdict.verdict === VERDICT_RELEVANT) statistics.relevant++;
+            else statistics.irrelevant++;
 
             // ★ 流式 yield：交给框架追加写盘
             yield makeJsonlNode(outputNodeTemplate, {
@@ -351,7 +330,7 @@ async function* reviewAll(tasks, sourceRows, outputNodeTemplate, statistics) {
             processedCount++;
             if (processedCount % SETTINGS.logEvery === 0 || processedCount === totalCount) {
                 const elapsedSec = Math.round((Date.now() - startTime) / 1000);
-                console.log(`AI审核进度: ${processedCount}/${totalCount}（已耗时 ${elapsedSec}s）`);
+                console.log(`AI标注进度: ${processedCount}/${totalCount}（已耗时 ${elapsedSec}s）`);
             }
         }
 
@@ -360,10 +339,8 @@ async function* reviewAll(tasks, sourceRows, outputNodeTemplate, statistics) {
             const hitLongSleep = SETTINGS.requestSleepEvery > 0 && requestCount !== 0 && requestCount % SETTINGS.requestSleepEvery === 0;
 
             if (hitLongSleep) {
-                const longMin = SETTINGS.requestSleepMinMs;
-                const longMax = SETTINGS.requestSleepMaxMs;
-                console.log(`已请求 ${requestCount} 次，触发长休息 ${longMin}~${longMax}ms`);
-                await randomSleep(longMin, longMax);
+                console.log(`已请求 ${requestCount} 次，触发长休息 ${SETTINGS.requestSleepMinMs}~${SETTINGS.requestSleepMaxMs}ms`);
+                await randomSleep(SETTINGS.requestSleepMinMs, SETTINGS.requestSleepMaxMs);
             } else {
                 await randomSleep(SETTINGS.sleepMinMs, SETTINGS.sleepMaxMs);
             }
@@ -381,24 +358,20 @@ function buildTasks(sourceRows) {
     const preVerdicts = new Map();
 
     sourceRows.forEach((row, rowIdx) => {
-        const unionName = row['联合名称'];
-        const part1Name = row['ICD名称1'];
-        const part2Name = row['ICD名称2'];
+        const code = row['icd_code'];
+        const name = row['icd_name'];
 
-        if (!unionName || !part1Name || !part2Name) {
+        if (!code || !name) {
+            // ★ 宁宽勿漏：编码/名称缺失标"相关"（数据质量问题不代表与外伤无关）
             preVerdicts.set(rowIdx, {
-                verdict: VERDICT_MANUAL,
-                reason: '关键名称缺失'
+                verdict: VERDICT_RELEVANT,
+                reason: '编码或名称缺失'
             });
         } else {
             tasks.push({
                 rowIdx: rowIdx,
-                union: unionName,
-                unionCode: row['联合编码'],
-                part1: part1Name,
-                part1Code: row['ICD编码1'],
-                part2: part2Name,
-                part2Code: row['ICD编码2']
+                code: code,
+                name: name
             });
         }
     });
@@ -411,56 +384,51 @@ function buildTasks(sourceRows) {
 // ══════════════════════════════════════════════════════════════
 
 async function* writingRules(inputArray, outputNodeTemplate) {
-    const outputDir = outputNodeTemplate.path // 临时目录绝对路径
+    const outputDir = outputNodeTemplate.path;
     const inputPath = path.join(outputDir, '../inputDir');
-    const jsonlPath = path.join(inputPath, 'reviewed.jsonl');   // 框架写到这里
+    const jsonlPath = path.join(inputPath, 'trauma.jsonl');   // 框架写到这里
     const outputNode = {
         ...outputNodeTemplate,
         path: inputPath
-    }
+    };
 
-    // 步骤1：找到上一规则输出的 result.xlsx
-    const sourceFile = inputArray.find(
-        file => file.normExt === 'xlsx' && file.name === 'result'
-    );
+    // 步骤1：找到上一规则输出的 candidate.xlsx
+    const sourceFile = inputArray.find(file => file.normExt === 'xlsx' && file.name === 'candidate');
     if (!sourceFile) {
-        yield [{ ...outputNodeTemplate, content: '错误: 未找到 result.xlsx，请先运行 icdCheck 规则生成预结果' }];
+        yield [{ ...outputNodeTemplate, content: `错误: 未找到 candidate.xlsx，请先运行 icdCheck2trauma 规则生成候选集` }];
         return;
     }
 
-    // 步骤1.5：断点续跑——流式读旧 reviewed.jsonl → Set<rowIdx>（存在即最终）
-    const jsonlFile = inputArray.find(file => file.normExt === 'jsonl' && file.name === 'reviewed');
+    // 步骤1.5：断点续跑——流式读旧 trauma.jsonl → Set<rowIdx>（存在即最终）
+    const jsonlFile = inputArray.find(file => file.normExt === 'jsonl' && file.name === 'trauma');
     const doneRowIdxs = await readJsonlStream(jsonlFile);
 
-    // 步骤2：读 Excel
+    // 步骤2：读候选集
     const sourceRows = readExcel(sourceFile.path);
     if (sourceRows.length === 0) {
-        yield [{ ...outputNodeTemplate, content: '错误: result.xlsx 无数据行' }];
+        yield [{ ...outputNodeTemplate, content: `错误: candidate.xlsx 无数据行` }];
         return;
     }
-    console.log(`已加载 ${sourceRows.length} 条记录（来自 ${sourceFile.path}）\n`);
+    console.log(`已加载 ${sourceRows.length} 条候选记录（来自 ${sourceFile.path}）\n`);
 
-    // 步骤3：造任务，并按存在性过滤（断点续跑：旧 jsonl 已有的行号一律跳过，存在即最终）
+    // 步骤3：造任务，并按存在性过滤（断点续跑：旧 jsonl 已有的行号一律跳过）
     const taskBuild = buildTasks(sourceRows);
 
-    // 过滤后的要执行任务
     const tasks = taskBuild.tasks.filter(task => shouldRerun(doneRowIdxs, task.rowIdx));
-    // 过滤后的要跳过任务
     const preVerdicts = new Map(
         [...taskBuild.preVerdicts].filter(
             ([rowIdx]) => shouldRerun(doneRowIdxs, rowIdx)
         )
     );
     const skipped = taskBuild.tasks.length - tasks.length;
-    console.log(`待审核 ${tasks.length} 条，跳过已评估 ${skipped} 条`);
+    console.log(`待标注 ${tasks.length} 条，跳过已评估 ${skipped} 条`);
 
-    const statistics = { ok: 0, bad: 0, manual: preVerdicts.size };
-
-    // ★ 步骤4：断点续跑模式——不再清空文件，仅追加本次新评的行（保留旧行）
+    // 统计初始化（二分类）；编码/名称缺失的行已标"相关"，计入 relevant
+    const statistics = { relevant: preVerdicts.size, irrelevant: 0 };
 
     console.log(`断点续跑文件已就绪: ${jsonlPath}\n`);
 
-    // ★ 步骤5：前置结论（名称缺失的）先落盘，同样携带原行数据（自包含记录）
+    // 步骤5：前置结论（编码/名称缺失的）先落盘，同样携带原行数据（自包含记录）
     for (const [rowIdx, verdict] of preVerdicts) {
         yield makeJsonlNode(outputNode, {
             rowIdx: rowIdx,
@@ -470,33 +438,34 @@ async function* writingRules(inputArray, outputNodeTemplate) {
         }, 'a');
     }
 
-    // ★ 步骤6：逐条审核，边审边 yield（for await 转发）
+    // 步骤6：逐批标注，边标边 yield（for await 转发）
     const startTime = Date.now();
     for await (const node of reviewAll(tasks, sourceRows, outputNode, statistics)) {
         yield node;
     }
     const elapsedSec = Math.round((Date.now() - startTime) / 1000);
 
-    console.log(`AI审核完成，耗时 ${elapsedSec}s`);
-    console.log(`合理: ${statistics.ok}，不合理: ${statistics.bad}，人工复审: ${statistics.manual}`);
+    console.log(`AI标注完成，耗时 ${elapsedSec}s`);
+    console.log(`相关: ${statistics.relevant}，无关: ${statistics.irrelevant}`);
     console.log('JSONL 文件:', jsonlPath);
+    console.log('后续: 运行 jsonl2xlsx 规则将 trauma.jsonl 转为 trauma.xlsx');
 
-    // ★ 步骤7：yield 运行摘要
+    // 步骤7：yield 运行摘要
     yield [{
         ...outputNodeTemplate,
-        fileName: 'reviewed',
+        fileName: 'trauma',
         normExt: 'json',
         content: JSON.stringify({
+            module: '外伤提醒知识库-AI批量标注',
             sourceRows: sourceRows.length,
-            reviewed: tasks.length,
+            trauma: tasks.length,
             skippedEvaluated: skipped,
-            reasonable: statistics.ok,
-            unreasonable: statistics.bad,
-            manualReview: statistics.manual,
+            relevant: statistics.relevant,
+            irrelevant: statistics.irrelevant,
             resumeMode: skipped > 0 ? 'resume' : (doneRowIdxs.size > 0 ? 'full-resume' : 'full'),
             elapsedSeconds: elapsedSec,
             jsonlFile: jsonlPath,
-            nextStep: '运行 jsonl2xlsx 规则将 reviewed.jsonl 转为 reviewed.xlsx'
+            nextStep: '运行 jsonl2xlsx 规则将 trauma.jsonl 转为 trauma.xlsx，筛出"相关"条目入库'
         }, null, 2)
     }];
 }
@@ -507,24 +476,27 @@ async function* writingRules(inputArray, outputNodeTemplate) {
 // ══════════════════════════════════════════════════════════════
 
 module.exports = {
-    name: 'icdAI',
-    version: '2.1.0',
+    name: 'icdAI2trauma',
+    version: '1.0.0',
     mode: 'stream',
     process: writingRules,
-    description: 'ICD 联合诊断拆分 AI 审核（流式 yield · 只产出 JSONL · LangChain.js 版）：内部以 ChatOpenAI + JsonOutputParser + withRetry 替换手写 fetch，并已对齐 1.1.1 能力——防封延时、断点续跑、批次送审，逐条判定"联合诊断=成分1+成分2"是否成立，每条结论（含原行数据）通过 yield 交给框架追加写 reviewed.jsonl；Excel 转换由下游 jsonl2xlsx 插件完成',
+    description: '外伤提醒知识库-AI批量标注模块（流式 yield · 只产出 JSONL · LangChain.js 版）：对规则预处理（icdCheck2trauma）输出的候选集逐条判定 相关/无关（是否与外伤相关、是否需提醒创建外伤申请单），剔除完全与外伤无关的条目；优先召回、宁宽勿漏，解析失败/接口失败/模型漏项一律兜底"相关"',
     notes: {
         node: '18.20.4',
         tips: [
-            '输入约定：上一规则（icdCheck）输出的 result.xlsx（12列预结果表）',
-            '输出：reviewed.jsonl（框架流式追加，写入 inputDir）+ reviewed.json（运行摘要）',
-            'JSONL 记录自包含：每行 = {rowIdx, ...原12列, AI评审, AI理由}，jsonl2xlsx 可直接转表格行',
-            'AI评审=合理：两成分为联合诊断真实组成；不合理：拆分错误/无关；人工复审：模型无法确定或接口失败',
-            '处理策略：批次送审，8条/批（SETTINGS.batchSize 可调）；每批之间随机等待 10~30s；每 3 次请求长休 3~5 分钟（防封，均可配）；失败经 withRetry 重试后整批兜底"人工复审"；批次内缺失项标"模型漏项"',
-            '断点续跑：启动时读取已生成的 reviewed.jsonl，已有行号一律跳过（存在即最终，不判定内容），只评缺失的行并追加，不清空文件；想重评某行（含接口失败的行）→ 手动删除该行后重跑',
+            '业务目标：对候选集逐条 AI 复审，判定 相关/无关，剔除完全和外伤无关的条目，输出带标注结果的数据集用于入库',
+            '知识库用途：线上开单时弹窗提醒医生创建外伤申请单；策略：优先召回、宁宽勿漏（仅提示、不强制）',
+            '判定：相关=涉及损伤/创伤/骨折/烧伤/中毒/外因致伤等外伤范畴；无关=与外伤完全无关（内科疾病/肿瘤/慢性病/感染/先心病等）',
+            '宁宽勿漏：不确定时判"相关"；解析失败/接口失败/模型漏项一律兜底"相关"（避免漏召回）',
+            '输入约定：上一规则（icdCheck2trauma）输出的 candidate.xlsx（列：icd_code, icd_name, 命中规则, 命中关键词）',
+            '输出：trauma.jsonl（框架流式追加，写入 inputDir）+ trauma.json（运行摘要）',
+            'JSONL 记录自包含：每行 = {rowIdx, ...原候选列, AI评审(相关|无关), AI理由}，jsonl2xlsx 可直接转表格行',
+            '处理策略：批次送审，15条/批（SETTINGS.batchSize 可调）；批间随机等待 10~30s；每 10 次请求长休 3~5 分钟（防封，均可配）；失败经 withRetry 重试后整批兜底"相关"；批次内缺失项标"模型漏项"',
+            '断点续跑：启动时读取已生成的 trauma.jsonl，已有行号一律跳过（存在即最终，不判定内容），只评缺失的行并追加，不清空文件；想重评某行（含接口失败的行）→ 手动删除该行后重跑',
             '更稳点(LangChain)：JsonOutputParser 优先解析、失败回退容忍式 extractJson；接口瞬时失败由 withRetry 自动重试',
-            '流式落地：每条结论通过 yield 输出，框架负责 append 到 reviewed.jsonl，中途崩溃已落盘部分不丢',
-            '链路：icdCheck（result.xlsx）→ icdAI（reviewed.jsonl）→ jsonl2xlsx（reviewed.xlsx）',
-            '注意：关联得分、灰度标记、匹配方式不发送给模型（不可信字段）',
+            '流式落地：每条结论通过 yield 输出，框架负责 append 到 trauma.jsonl，中途崩溃已落盘部分不丢',
+            '链路：icdCheck2trauma（candidate.xlsx）→ traumaAILabel（trauma.jsonl）→ jsonl2xlsx（trauma.xlsx）',
+            '注意：命中规则、命中关键词不发送给模型（不可信字段）',
             '依赖：@langchain/openai、@langchain/core（见 rely，二者必须版本配对）；端点须为 OpenAI 兼容',
             '版本配对（已核对 npm 2026-09）：@langchain/openai@^1.5.13 要求 @langchain/core@^1.2.11，且 openai@1.x 要求 Node>=22',
             '若插件实际跑在 Node 18（非框架的 node22 target），请改用旧线 @langchain/openai@^0.3.17 + @langchain/core@^0.3.0',
@@ -534,11 +506,11 @@ module.exports = {
     },
     input: {
         normExt: 'xlsx文件',
-        format: 'Excel：约定 result.xlsx（icdCheck 规则输出），12列预结果表'
+        format: 'Excel：约定 candidate.xlsx（icdCheck2trauma 规则输出），列：icd_code, icd_name, 命中规则, 命中关键词'
     },
     output: {
         normExt: 'jsonl文件',
-        format: 'reviewed.jsonl：每行 {rowIdx, ...原12列, AI评审(合理|不合理|人工复审), AI理由}；另有 reviewed.json 运行摘要'
+        format: 'trauma.jsonl：每行 {rowIdx, ...原候选列, AI评审(相关|无关), AI理由}；另有 trauma.json 运行摘要'
     },
     rely: {
         'xlsx': '0.18.0',
