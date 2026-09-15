@@ -508,6 +508,10 @@
       "1.1.0": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/jsonl2xlsx/1.1.0.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/jsonl2xlsx/1.1.0.js"
+      },
+      "1.1.1": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/jsonl2xlsx/1.1.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/jsonl2xlsx/1.1.1.js"
       }
     }
   },
