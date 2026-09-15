@@ -105,6 +105,9 @@ async function generateXlsx(jsonlFile, outputNodeTemplate) {
     const fileName = `${jsonlFile.name}.xlsx`;
     const outputPath = path.join(outputDir, fileName);
 
+    // 进度日志间隔（可按需调整；不想打印就设为 0）
+    const LOG_EVERY = 200;
+
     // 流式写入器：行级 commit 落盘，workbook 数据不整体驻留内存
     const writer = new ExcelJS.stream.xlsx.WorkbookWriter({
         filename: outputPath,
@@ -117,6 +120,9 @@ async function generateXlsx(jsonlFile, outputNodeTemplate) {
     let badLines = 0;  // 坏行数
     let columns = null;// 列定义，由首条有效记录确定
 
+    // 每 LOG_EVERY 行打一次进度；流式读无法预知总行数，用"已处理 + 速度 + 耗时"表达
+    const startTime = Date.now();
+
     try {
         // ★ 唯一一次读取；await 保证回调全部执行完再 commit
         const stat = await readJsonlStream(jsonlFile, (record) => {
@@ -128,6 +134,13 @@ async function generateXlsx(jsonlFile, outputNodeTemplate) {
 
             worksheet.addRow(toRow(columns, record)).commit();
             rows++;
+
+            // ★ 按 logEvery 打点
+            if (LOG_EVERY > 0 && rows % LOG_EVERY === 0) {
+                const elapsedSec = Math.round((Date.now() - startTime) / 1000);
+                const speed = elapsedSec > 0 ? Math.round(rows / elapsedSec) : 0;
+                console.log(`XLSX 写出进度: 已处理 ${rows} 行（已耗时 ${elapsedSec}s，约 ${speed} 行/s）`);
+            };
         });
 
 
@@ -174,7 +187,7 @@ function toRow(columns, record) {
 
 module.exports = {
     name: 'jsonl2xlsx',
-    version: '1.1.0',
+    version: '1.1.1',
     mode: 'stream', // 声明为流式模式
     process: writingRules,
     description: '流式将 jsonl 转换为 xlsx：逐行读取逐行写出，内存 O(单行)，适合超大文件；不处理 rowIdx，按文件行序输出',
