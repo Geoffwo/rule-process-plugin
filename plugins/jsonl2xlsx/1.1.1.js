@@ -106,7 +106,7 @@ async function generateXlsx(jsonlFile, outputNodeTemplate) {
     const outputPath = path.join(outputDir, fileName);
 
     // 进度日志间隔（可按需调整；不想打印就设为 0）
-    const LOG_EVERY = 200;
+    const LOG_EVERY = 5000;
 
     // 流式写入器：行级 commit 落盘，workbook 数据不整体驻留内存
     const writer = new ExcelJS.stream.xlsx.WorkbookWriter({
