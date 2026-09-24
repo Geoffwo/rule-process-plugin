@@ -735,6 +735,14 @@
       }
     }
   },
+  "uia2auto": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/uia2auto/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/uia2auto/1.0.0.js"
+      }
+    }
+  },
   "url2png": {
     "versions": {
       "1.0.0": {
