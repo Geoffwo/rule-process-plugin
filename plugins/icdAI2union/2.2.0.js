@@ -1,6 +1,28 @@
 /*
  * ICD 联合诊断拆分 AI 审核（rule-process 插件版 · 流式 yield · 只产出 JSONL）
  *
+ * ══════════════════════════════════════════════════════════════
+ * 2.0.0 改造说明（相对 1.0.0）：仅把"调模型 + 解析 + 重试"内部换成
+ * LangChain.js（ChatOpenAI + JsonOutputParser + withRetry），
+ * 对外契约（mode:'stream'、async function* process、节点 yield 形状、
+ * 下游 jsonl2xlsx）完全不变。目标：更稳的解析与重试，不引入 Graph。
+ *
+ * 2.0.0 功能适配（对齐 1.1.1）：在保留 LangChain 调用层的前提下，
+ * 移植 1.1.1 的三项新能力——
+ *   ① 断点续跑：流式读旧 reviewed.jsonl → Set<rowIdx>（存在即最终），
+ *      只评缺失行并追加，不再清空文件；重评某行 → 手动删除该行后重跑
+ *   ② 批次送审：batchSize 条/批，按 idx 对齐，缺失项标"模型漏项"，
+ *      整批失败全部兜底"人工复审"（不做单条回退）
+ *   ③ 防封延时：批间随机 10~30s；每 requestSleepEvery 次请求后
+ *      长休息 3~5 分钟（设 0 禁用）
+ * 同时对齐 1.1.1 的输出路径约定：reviewed.jsonl 写入 inputDir，
+ * 供下游 jsonl2xlsx 直接作为输入拾取。
+ *
+ * 2.2.0 改动：断点续跑读取旧 reviewed.jsonl 由"手动按行切分缓冲"
+ * 改为 readline 逐行读取（crlfDelay:Infinity 兼容 CRLF），
+ * 同样只驻留行号集合、避免整文件进内存；坏行计数并告警而非静默跳过。
+ * ══════════════════════════════════════════════════════════════
+ *
  * 职责边界：本插件只负责"AI 审核 → reviewed.jsonl"，
  * JSONL 转 Excel 由下游插件 jsonl2xlsx 完成。
  * 链路：icdCheck（result.xlsx）→ icdAI（reviewed.jsonl）→ jsonl2xlsx（reviewed.xlsx）
@@ -9,7 +31,7 @@
  *   writingRules（async function*）
  *     ├─ readExcel ← result.xlsx
  *     ├─ buildTasks
- *     ├─ yield 'w' 节点清空 reviewed.jsonl
+ *     ├─ 流式读旧 reviewed.jsonl → 断点续跑过滤
  *     ├─ yield 前置结论（名称缺失的）
  *     ├─ for await reviewAll(...) → 每条结论 yield 给框架追加写 reviewed.jsonl
  *     └─ yield 运行摘要 reviewed.json
@@ -23,21 +45,39 @@
  */
 const path = require('path');
 const xlsx = require('xlsx');
+const readline = require('readline');
+
+// ── LangChain.js（仅替换调模型/解析/重试三处）────────────────────
+// 注意：以下依赖需安装（见底部 rely 字段）。未安装时本插件 require 阶段即报错，
+// 属于预期行为，安装后即可加载。
+const { ChatOpenAI } = require('@langchain/openai');
+const { JsonOutputParser } = require('@langchain/core/output_parsers');
+const { SystemMessage, HumanMessage } = require('@langchain/core/messages');
 
 // ══════════════════════════════════════════════════════════════
 // 1. 配置
 // ══════════════════════════════════════════════════════════════
 const SETTINGS = {
-    apiUrl: 'http://127.0.0.1:7863/v1/chat/completions',
-    apiKey: 'Bearer WildWorkAPI',
+    apiUrl: 'http://127.0.0.1:7863/v1',
+    apiKey: 'WildWorkAPI',
     model: 'workbuddy/hy3',
     temperature: 0.1,
     maxTokens: 10000,
-    timeoutMs: 60000,
-    sleepMinMs: 200,
-    sleepMaxMs: 800,
+    timeoutMs: 60 * 1000 * 10,   // 10 分钟
+
+    // 普通批间休息（对齐 1.1.1 防封节奏）
+    sleepMinMs: 10 * 1000,       // 10 秒
+    sleepMaxMs: 30 * 1000,       // 30 秒
     batchSize: 8,
-    logEvery: 50
+    logEvery: 50,
+
+    // 每 requestSleepEvery 次模型请求后，长休息 requestSleepMinMs~requestSleepMaxMs
+    requestSleepEvery: 8,        // 每 8 次请求长休一次；设 0 表示禁用
+    requestSleepMinMs: 60 * 1000 * 3,   // 3 分钟
+    requestSleepMaxMs: 60 * 1000 * 5,   // 5 分钟
+
+    // LangChain 重试策略：接口瞬时失败（超时/5xx/网络）自动重试
+    retryAttempts: 0
 };
 
 const SYSTEM_PROMPT =
@@ -65,6 +105,10 @@ function readExcel(filePath) {
     return xlsx.utils.sheet_to_json(worksheet);
 }
 
+/**
+ * 容忍式 JSON 提取（作为 JsonOutputParser 失败时的兜底）。
+ * 处理 ```json 代码块、前后多余文字，支持数组或单对象。
+ */
 function extractJson(replyText) {
     const cleaned = String(replyText).replace(/```json|```/g, '').trim();
     const arrayStart = cleaned.indexOf('[');
@@ -87,6 +131,84 @@ function randomSleep(minMs, maxMs) {
 }
 
 /**
+ * 流式逐行解析旧 reviewed.jsonl（断点续跑：收集已评行号）。
+ * 用 readline 逐行读取（crlfDelay:Infinity 自动兼容 \r\n），避免整文件进内存。
+ * 第二参 stream 为回调：每条成功解析且为对象的记录会传给 stream(record)，
+ * 由调用方决定如何处理（本插件用于把 rowIdx 收集进 Set）。
+ * 坏行/非对象行跳过并计数告警（不中断）；返回统计对象。
+ */
+async function readJsonlStream(source, stream) {
+    const emptyResult = {
+        totalLines: 0,
+        emptyLines: 0,
+        objLines: 0,
+        badLines: 0,
+        notObjLines: 0
+    };
+    if (!source) return emptyResult;
+
+    let streamValue;
+    try { streamValue = source.stream(); } catch (e) { return emptyResult; }
+    if (!streamValue) return emptyResult;
+
+    let totalLines = 0, // 总行数
+        emptyLines = 0, // 空行数
+        objLines = 0,   // 处理行数
+        badLines = 0,   // 坏行数
+        notObjLines = 0;// 非对象行数
+
+    // ★ stream 模式下用 readline 逐行读取，避免整文件进内存
+    const rl = readline.createInterface({
+        input: streamValue,
+        crlfDelay: Infinity
+    });
+
+    for await (const line of rl) {
+        totalLines++;
+
+        const text = line.trim();
+        if (!text) { emptyLines++; continue; } // 跳过空行
+
+        let record;
+        try {
+            record = JSON.parse(text);
+        } catch (e) {
+            badLines++;
+            console.warn('JSONL 单行解析失败，已跳过:', text.slice(0, 80));
+            continue;
+        }
+
+        if (!record || typeof record !== 'object' || Array.isArray(record)) {
+            notObjLines++;
+            console.warn('JSONL 单行非对象，已跳过:', text.slice(0, 80));
+            continue;
+        }
+
+        objLines++;
+
+        // ★ 回调在 parse 的 try 外，写盘错误才会正常冒泡到调用方
+        if (typeof stream === 'function') stream(record);
+    }
+    return {
+        totalLines,
+        objLines,
+        errorLines: badLines + notObjLines,
+        badLines,
+        notObjLines
+    };
+}
+
+/**
+ * 判定某行是否需要评（断点续跑/删行重评的统一入口）。
+ * 纯存在性判断：rowIdx 已在旧 jsonl 中 → 跳过（存在即最终，已有内容不重跑、
+ * 不重复追加）；不存在（从未评过 / 被手动删除）→ 待评。
+ * 想重评某行（含接口失败的行）→ 手动删除该行后重跑。
+ */
+function shouldRerun(doneRowIdxs, rowIdx) {
+    return !doneRowIdxs.has(rowIdx);
+}
+
+/**
  * 构造一条 JSONL 节点的 yield 载荷
  * 框架按 content 原样追加写 reviewed.jsonl（不补换行），
  * 因此这里必须自带 '\n'，否则所有记录挤在同一行、下游解析失败
@@ -103,49 +225,41 @@ function makeJsonlNode(outputNodeTemplate, record, mode) {
 
 
 // ══════════════════════════════════════════════════════════════
-// 3. 调模型
+// 3. 调模型（★ LangChain.js 替换手写 fetch）
 // ══════════════════════════════════════════════════════════════
 
-async function callModel(messages) {
-    const controller = new AbortController();
-    const timeoutTimer = setTimeout(() => controller.abort(), SETTINGS.timeoutMs);
-    try {
-        const response = await fetch(SETTINGS.apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': SETTINGS.apiKey
-            },
-            body: JSON.stringify({
-                model: SETTINGS.model,
-                temperature: SETTINGS.temperature,
-                max_tokens: SETTINGS.maxTokens,
-                messages: messages
-            }),
-            signal: controller.signal
-        });
+// 端点已是 OpenAI 兼容（/v1/chat/completions + messages/model/temperature/max_tokens），
+// ChatOpenAI 可直接接管，模型/密钥/地址一行不改语义。
+const lcApiKey = SETTINGS.apiKey.replace(/^Bearer\s+/i, '');                       // LangChain 自带 Bearer 前缀
+const lcBaseURL = SETTINGS.apiUrl.replace(/\/chat\/completions\/?$/i, '');         // → http://127.0.0.1:7863/v1
 
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+const chatModel = new ChatOpenAI({
+    model: SETTINGS.model,
+    apiKey: lcApiKey,
+    configuration: { baseURL: lcBaseURL },
+    temperature: SETTINGS.temperature,
+    maxTokens: SETTINGS.maxTokens,
+    timeout: SETTINGS.timeoutMs,
+    maxRetries: 0                       // 关闭 SDK 内置重试，统一由 withRetry 管理策略
+});
 
-        const responseData = await response.json();
-        const replyContent = responseData.choices
-            && responseData.choices[0]
-            && responseData.choices[0].message
-            && responseData.choices[0].message.content;
+// 显式重试：瞬时失败自动重试，最终仍失败才在 reviewBatch 兜底层置"人工复审"
+const chatModelRetry = chatModel.withRetry({ stopAfterAttempt: SETTINGS.retryAttempts });
 
-        const thinkContent = responseData.choices
-            && responseData.choices[0]
-            && responseData.choices[0].message
-            && responseData.choices[0].message.reasoning_content;
+// 容忍式 JSON 解析器（提示词已要求严格 JSON，这里做结构化兜底）
+const jsonParser = new JsonOutputParser();
 
-        if (!replyContent) throw new Error('响应缺少 content');
-        return {
-            replyText:replyContent,
-            thinkText:thinkContent
-        };
-    } finally {
-        clearTimeout(timeoutTimer);
+// 尝试从响应中取"思维链"（DeepSeek 兼容端点常放 reasoning_content）。
+// 注意：LangChain 默认不保证暴露该字段，取不到时 think 为 null，不影响主流程。
+function extractThink(response) {
+    if (!response) return null;
+
+    if (response.additional_kwargs && response.additional_kwargs.reasoning_content) {
+        return response.additional_kwargs.reasoning_content;
     }
+
+    if (response.reasoning) return response.reasoning;   // LangChain 较新版本的推理字段
+    return null;
 }
 
 
@@ -159,7 +273,8 @@ function buildPrompt(tasks) {
     ).join('\n');
 
     return `审核以下 ${tasks.length} 条拆分记录，判断每条"成分1+成分2"是否为联合诊断的合理拆分，以及结算时能否用联合编码代替两个成分编码。
-    
+
+
 判定：
 - 合理：成分均为联合编码的真实组成部分，组合后医学语义完全等价，无遗漏、无扩大，且属于官方合并编码或医保规则明确允许的联合替代。
 - 人工复审：成分与联合编码兼容但信息不完整、成分未完全覆盖(联合编码的范围明显大于两个成分覆盖的总和)、语义模糊、专业性强、无法确定，或结算规则不明确。
@@ -179,11 +294,24 @@ ${recordLines}
 
 async function reviewBatch(tasks) {
     try {
-        const {replyText,thinkText} = await callModel([
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: buildPrompt(tasks) }
+        const response = await chatModelRetry.invoke([
+            new SystemMessage(SYSTEM_PROMPT),
+            new HumanMessage(buildPrompt(tasks))
         ]);
-        const parsedData = extractJson(replyText);
+
+        const replyText = typeof response.content === 'string'
+            ? response.content
+            : JSON.stringify(response.content);
+
+        const thinkText = extractThink(response);
+
+        // ★ 更稳的解析：优先 JsonOutputParser，失败回退容忍式 extractJson
+        let parsedData = null;
+        try {
+            parsedData = await jsonParser.parse(replyText);
+        } catch (parseErr) {
+            parsedData = extractJson(replyText);
+        }
         const entries = Array.isArray(parsedData) ? parsedData : (parsedData ? [parsedData] : []);
 
         // 按 idx 对齐到 tasks 位置（idx 从 1 开始）
@@ -212,7 +340,7 @@ async function reviewBatch(tasks) {
         }
         return results;
     } catch (error) {
-        // 整批失败，全部兜底人工复审（不做单条回退）
+        // withRetry 重试耗尽后整批失败，全部兜底人工复审（不做单条回退）
         return tasks.map(() => ({
             verdict: VERDICT_MANUAL,
             reason: '接口失败:' + error.message
@@ -224,17 +352,19 @@ async function reviewBatch(tasks) {
  * 批次审核（生成器）。
  * 每批审完后，逐条 yield 一个 JSONL 节点给框架落盘。
  * 记录自包含（原行数据 + 结论），供下游 jsonl2xlsx 直接转表格行。
- * 每批之间随机 sleep（不是每条）。
+ * 每批之间随机 sleep（不是每条）；达到长休阈值时触发长休息（防封）。
  */
 async function* reviewAll(tasks, sourceRows, outputNodeTemplate, statistics) {
     const totalCount = tasks.length;
     const startTime = Date.now();
     const batchSize = SETTINGS.batchSize;
     let processedCount = 0;
+    let requestCount = 0; // 本次运行已发起的模型请求次数
 
     for (let i = 0; i < totalCount; i += batchSize) {
         const batch = tasks.slice(i, i + batchSize);
         const verdicts = await reviewBatch(batch);
+        requestCount++;
 
         for (let j = 0; j < batch.length; j++) {
             const singleTask = batch[j];
@@ -260,8 +390,18 @@ async function* reviewAll(tasks, sourceRows, outputNodeTemplate, statistics) {
             }
         }
 
+        // 不是最后一批才休息
         if (i + batchSize < totalCount) {
-            await randomSleep(SETTINGS.sleepMinMs, SETTINGS.sleepMaxMs);
+            const hitLongSleep = SETTINGS.requestSleepEvery > 0 && requestCount !== 0 && requestCount % SETTINGS.requestSleepEvery === 0;
+
+            if (hitLongSleep) {
+                const longMin = SETTINGS.requestSleepMinMs;
+                const longMax = SETTINGS.requestSleepMaxMs;
+                console.log(`已请求 ${requestCount} 次，触发长休息 ${longMin}~${longMax}ms`);
+                await randomSleep(longMin, longMax);
+            } else {
+                await randomSleep(SETTINGS.sleepMinMs, SETTINGS.sleepMaxMs);
+            }
         }
     }
 }
@@ -306,8 +446,13 @@ function buildTasks(sourceRows) {
 // ══════════════════════════════════════════════════════════════
 
 async function* writingRules(inputArray, outputNodeTemplate) {
-    const outputDir = outputNodeTemplate.path;
-    const jsonlPath = path.join(outputDir, 'reviewed.jsonl');   // 框架写到这里
+    const outputDir = outputNodeTemplate.path // 临时目录绝对路径
+    const inputPath = path.join(outputDir, '../inputDir');
+    const jsonlPath = path.join(inputPath, 'reviewed.jsonl');   // 框架写到这里
+    const outputNode = {
+        ...outputNodeTemplate,
+        path: inputPath
+    }
 
     // 步骤1：找到上一规则输出的 result.xlsx
     const sourceFile = inputArray.find(
@@ -318,6 +463,16 @@ async function* writingRules(inputArray, outputNodeTemplate) {
         return;
     }
 
+    // 步骤1.5：断点续跑——流式读旧 reviewed.jsonl → Set<rowIdx>（存在即最终）
+    const jsonlFile = inputArray.find(file => file.normExt === 'jsonl' && file.name === 'reviewed');
+    const doneRowIdxs = new Set();
+    const resumeStats = await readJsonlStream(jsonlFile, (record) => {
+        if (record && typeof record.rowIdx === 'number') doneRowIdxs.add(record.rowIdx);
+    });
+    if (resumeStats.errorLines > 0) {
+        console.warn(`断点续跑读取旧 reviewed.jsonl：总行 ${resumeStats.totalLines}，有效 ${resumeStats.objLines}，跳过坏行 ${resumeStats.badLines} / 非对象 ${resumeStats.notObjLines}`);
+    }
+
     // 步骤2：读 Excel
     const sourceRows = readExcel(sourceFile.path);
     if (sourceRows.length === 0) {
@@ -326,27 +481,29 @@ async function* writingRules(inputArray, outputNodeTemplate) {
     }
     console.log(`已加载 ${sourceRows.length} 条记录（来自 ${sourceFile.path}）\n`);
 
-    // 步骤3：造任务
-    const taskBuildResult = buildTasks(sourceRows);
-    const tasks = taskBuildResult.tasks;
-    const preVerdicts = taskBuildResult.preVerdicts;
-    console.log(`待审核 ${tasks.length} 条，跳过 ${preVerdicts.size} 条（名称缺失）`);
+    // 步骤3：造任务，并按存在性过滤（断点续跑：旧 jsonl 已有的行号一律跳过，存在即最终）
+    const taskBuild = buildTasks(sourceRows);
+
+    // 过滤后的要执行任务
+    const tasks = taskBuild.tasks.filter(task => shouldRerun(doneRowIdxs, task.rowIdx));
+    // 过滤后的要跳过任务
+    const preVerdicts = new Map(
+        [...taskBuild.preVerdicts].filter(
+            ([rowIdx]) => shouldRerun(doneRowIdxs, rowIdx)
+        )
+    );
+    const skipped = taskBuild.tasks.length - tasks.length;
+    console.log(`待审核 ${tasks.length} 条，跳过已评估 ${skipped} 条`);
 
     const statistics = { ok: 0, bad: 0, manual: preVerdicts.size };
 
-    // ★ 步骤4：先 yield 一个 'w' 节点清空 JSONL（空内容覆盖写，不产生垃圾行）
-    yield [{
-        ...outputNodeTemplate,
-        fileName: 'reviewed',
-        normExt: 'jsonl',
-        content: '',
-        option: { flag: 'w' }
-    }];
-    console.log(`流式输出文件已就绪: ${jsonlPath}\n`);
+    // ★ 步骤4：断点续跑模式——不再清空文件，仅追加本次新评的行（保留旧行）
+
+    console.log(`断点续跑文件已就绪: ${jsonlPath}\n`);
 
     // ★ 步骤5：前置结论（名称缺失的）先落盘，同样携带原行数据（自包含记录）
     for (const [rowIdx, verdict] of preVerdicts) {
-        yield makeJsonlNode(outputNodeTemplate, {
+        yield makeJsonlNode(outputNode, {
             rowIdx: rowIdx,
             ...sourceRows[rowIdx],
             'AI评审': verdict.verdict,
@@ -356,7 +513,7 @@ async function* writingRules(inputArray, outputNodeTemplate) {
 
     // ★ 步骤6：逐条审核，边审边 yield（for await 转发）
     const startTime = Date.now();
-    for await (const node of reviewAll(tasks, sourceRows, outputNodeTemplate, statistics)) {
+    for await (const node of reviewAll(tasks, sourceRows, outputNode, statistics)) {
         yield node;
     }
     const elapsedSec = Math.round((Date.now() - startTime) / 1000);
@@ -364,7 +521,6 @@ async function* writingRules(inputArray, outputNodeTemplate) {
     console.log(`AI审核完成，耗时 ${elapsedSec}s`);
     console.log(`合理: ${statistics.ok}，不合理: ${statistics.bad}，人工复审: ${statistics.manual}`);
     console.log('JSONL 文件:', jsonlPath);
-    console.log('后续: 将 reviewed.jsonl 放入输入目录，运行 jsonl2xlsx 规则生成 reviewed.xlsx');
 
     // ★ 步骤7：yield 运行摘要
     yield [{
@@ -374,10 +530,11 @@ async function* writingRules(inputArray, outputNodeTemplate) {
         content: JSON.stringify({
             sourceRows: sourceRows.length,
             reviewed: tasks.length,
-            skipped: preVerdicts.size,
+            skippedEvaluated: skipped,
             reasonable: statistics.ok,
             unreasonable: statistics.bad,
             manualReview: statistics.manual,
+            resumeMode: skipped > 0 ? 'resume' : (doneRowIdxs.size > 0 ? 'full-resume' : 'full'),
             elapsedSeconds: elapsedSec,
             jsonlFile: jsonlPath,
             nextStep: '运行 jsonl2xlsx 规则将 reviewed.jsonl 转为 reviewed.xlsx'
@@ -391,23 +548,30 @@ async function* writingRules(inputArray, outputNodeTemplate) {
 // ══════════════════════════════════════════════════════════════
 
 module.exports = {
-    name: 'icdAI',
-    version: '2.3.0',
+    name: 'icdAI2union',
+    version: '2.2.0',
     mode: 'stream',
     process: writingRules,
-    description: 'ICD 联合诊断拆分 AI 审核（流式 yield · 只产出 JSONL）：提示词优化，逐条判定"联合诊断=成分1+成分2"是否成立，每条结论（含原行数据）通过 yield 交给框架追加写 reviewed.jsonl；Excel 转换由下游 jsonl2xlsx 插件完成',
+    description: 'ICD 联合诊断拆分 AI 审核（流式 yield · 只产出 JSONL · LangChain.js 版）：内部以 ChatOpenAI + JsonOutputParser + withRetry 替换手写 fetch，并已对齐 1.1.1 能力——防封延时、断点续跑、批次送审，逐条判定"联合诊断=成分1+成分2"是否成立，每条结论（含原行数据）通过 yield 交给框架追加写 reviewed.jsonl；Excel 转换由下游 jsonl2xlsx 插件完成',
     notes: {
         node: '18.20.4',
         tips: [
             '输入约定：上一规则（icdCheck）输出的 result.xlsx（12列预结果表）',
-            '输出：reviewed.jsonl（框架流式追加）+ reviewed.json（运行摘要）',
+            '输出：reviewed.jsonl（框架流式追加，写入 inputDir）+ reviewed.json（运行摘要）',
             'JSONL 记录自包含：每行 = {rowIdx, ...原12列, AI评审, AI理由}，jsonl2xlsx 可直接转表格行',
             'AI评审=合理：两成分为联合诊断真实组成；不合理：拆分错误/无关；人工复审：模型无法确定或接口失败',
-            '处理策略：批次送审，8条/批（SETTINGS.batchSize 可调）；每批之间随机等待 200~800ms；失败直接兜底"人工复审"；批次内缺失项标"模型漏项"',
+            '处理策略：批次送审，8条/批（SETTINGS.batchSize 可调）；每批之间随机等待 10~30s；每 3 次请求长休 3~5 分钟（防封，均可配）；失败经 withRetry 重试后整批兜底"人工复审"；批次内缺失项标"模型漏项"',
+            '断点续跑：启动时读取已生成的 reviewed.jsonl，已有行号一律跳过（存在即最终，不判定内容），只评缺失的行并追加，不清空文件；想重评某行（含接口失败的行）→ 手动删除该行后重跑',
+            '更稳点(LangChain)：JsonOutputParser 优先解析、失败回退容忍式 extractJson；接口瞬时失败由 withRetry 自动重试',
             '流式落地：每条结论通过 yield 输出，框架负责 append 到 reviewed.jsonl，中途崩溃已落盘部分不丢',
             '链路：icdCheck（result.xlsx）→ icdAI（reviewed.jsonl）→ jsonl2xlsx（reviewed.xlsx）',
             '注意：关联得分、灰度标记、匹配方式不发送给模型（不可信字段）',
-            '接口地址/密钥/sleep 区间/logEvery 等集中在顶部 SETTINGS，运行前按需调整'
+            '依赖：@langchain/openai、@langchain/core（见 rely，二者必须版本配对）；端点须为 OpenAI 兼容',
+            '版本配对（已核对 npm 2026-09）：@langchain/openai@^1.5.13 要求 @langchain/core@^1.2.11，且 openai@1.x 要求 Node>=22',
+            '若插件实际跑在 Node 18（非框架的 node22 target），请改用旧线 @langchain/openai@^0.3.17 + @langchain/core@^0.3.0',
+            '已知缺口：自定义端点 workbuddy/hy3-x 未必暴露 reasoning_content，AI思考列可能为空（不影响主流程）',
+            '接口地址/密钥/sleep 区间/batchSize/logEvery 等集中在顶部 SETTINGS，运行前按需调整',
+            '版本 2.2.0 改动：断点续跑读取旧 reviewed.jsonl 由"手动按行切分缓冲"改为 readline 逐行读取（crlfDelay:Infinity 兼容 CRLF），同样只驻留行号集合、避免整文件进内存；坏行计数并告警而非静默跳过'
         ]
     },
     input: {
@@ -418,5 +582,9 @@ module.exports = {
         normExt: 'jsonl文件',
         format: 'reviewed.jsonl：每行 {rowIdx, ...原12列, AI评审(合理|不合理|人工复审), AI理由}；另有 reviewed.json 运行摘要'
     },
-    rely: { 'xlsx': '0.18.0' }
+    rely: {
+        'xlsx': '0.18.0',
+        '@langchain/openai': '1.5.13',
+        '@langchain/core': '1.2.11'
+    }
 };

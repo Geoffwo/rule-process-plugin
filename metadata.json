@@ -363,43 +363,71 @@
       }
     }
   },
-  "icdAI": {
+  "icdAI2trauma": {
     "versions": {
       "1.0.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI/1.0.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI/1.0.0.js"
-      },
-      "1.0.1": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI/1.0.1.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI/1.0.1.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI2trauma/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI2trauma/1.0.0.js"
       },
       "1.1.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI/1.1.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI/1.1.0.js"
-      },
-      "1.1.1": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI/1.1.1.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI/1.1.1.js"
-      },
-      "2.0.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI/2.0.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI/2.0.0.js"
-      },
-      "2.1.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI/2.1.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI/2.1.0.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI2trauma/1.1.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI2trauma/1.1.0.js"
       }
     }
   },
-  "icdCheck": {
+  "icdAI2union": {
     "versions": {
       "1.0.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdCheck/1.0.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdCheck/1.0.0.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI2union/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI2union/1.0.0.js"
+      },
+      "1.0.1": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI2union/1.0.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI2union/1.0.1.js"
       },
       "1.1.0": {
-        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdCheck/1.1.0.js",
-        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdCheck/1.1.0.js"
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI2union/1.1.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI2union/1.1.0.js"
+      },
+      "1.1.1": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI2union/1.1.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI2union/1.1.1.js"
+      },
+      "2.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI2union/2.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI2union/2.0.0.js"
+      },
+      "2.1.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI2union/2.1.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI2union/2.1.0.js"
+      },
+      "2.2.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdAI2union/2.2.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdAI2union/2.2.0.js"
+      }
+    }
+  },
+  "icdCheck2trauma": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdCheck2trauma/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdCheck2trauma/1.0.0.js"
+      },
+      "1.0.1": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdCheck2trauma/1.0.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdCheck2trauma/1.0.1.js"
+      }
+    }
+  },
+  "icdCheck2union": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdCheck2union/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdCheck2union/1.0.0.js"
+      },
+      "1.1.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/icdCheck2union/1.1.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/icdCheck2union/1.1.0.js"
       }
     }
   },
@@ -468,6 +496,30 @@
       "1.0.0": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/json2xlsx/1.0.0.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/json2xlsx/1.0.0.js"
+      }
+    }
+  },
+  "jsonl2xlsx": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/jsonl2xlsx/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/jsonl2xlsx/1.0.0.js"
+      },
+      "1.1.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/jsonl2xlsx/1.1.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/jsonl2xlsx/1.1.0.js"
+      },
+      "1.1.1": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/jsonl2xlsx/1.1.1.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/jsonl2xlsx/1.1.1.js"
+      }
+    }
+  },
+  "mcp2exe": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/mcp2exe/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/mcp2exe/1.0.0.js"
       }
     }
   },

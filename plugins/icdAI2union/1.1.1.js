@@ -33,11 +33,18 @@ const SETTINGS = {
     model: 'workbuddy/hy3',
     temperature: 0.1,
     maxTokens: 10000,
-    timeoutMs: 600000,
-    sleepMinMs: 200,
-    sleepMaxMs: 800,
+    timeoutMs: 60 * 1000 * 10,// 10 分钟
+
+    // 普通批间休息
+    sleepMinMs: 10 * 1000,// 10 秒
+    sleepMaxMs: 30 * 1000,// 30 秒
     batchSize: 8,
-    logEvery: 50
+    logEvery: 50,
+
+    // 新增：每 requestSleepEvery 次模型请求后，长休息 requestSleepMinMs~requestSleepMaxMs
+    requestSleepEvery: 3,        // 每 10 次请求长休一次；设 0 表示禁用
+    requestSleepMinMs: 60 * 1000 * 3,     // 3 分钟
+    requestSleepMaxMs: 60 * 1000 * 5,    // 5 分钟
 };
 
 const SYSTEM_PROMPT =
@@ -279,10 +286,12 @@ async function* reviewAll(tasks, sourceRows, outputNodeTemplate, statistics) {
     const startTime = Date.now();
     const batchSize = SETTINGS.batchSize;
     let processedCount = 0;
+    let requestCount = 0; // 本次运行已发起的模型请求次数
 
     for (let i = 0; i < totalCount; i += batchSize) {
         const batch = tasks.slice(i, i + batchSize);
         const verdicts = await reviewBatch(batch);
+        requestCount++;
 
         for (let j = 0; j < batch.length; j++) {
             const singleTask = batch[j];
@@ -308,8 +317,18 @@ async function* reviewAll(tasks, sourceRows, outputNodeTemplate, statistics) {
             }
         }
 
+        // 不是最后一批才休息
         if (i + batchSize < totalCount) {
-            await randomSleep(SETTINGS.sleepMinMs, SETTINGS.sleepMaxMs);
+            const hitLongSleep = SETTINGS.requestSleepEvery > 0 && requestCount !== 0 && requestCount % SETTINGS.requestSleepEvery === 0;
+
+            if (hitLongSleep) {
+                const longMin = SETTINGS.requestSleepMinMs;
+                const longMax = SETTINGS.requestSleepMaxMs;
+                console.log(`已请求 ${requestCount} 次，触发长休息 ${longMin}~${longMax}ms`);
+                await randomSleep(longMin, longMax);
+            } else {
+                await randomSleep(SETTINGS.sleepMinMs, SETTINGS.sleepMaxMs);
+            }
         }
     }
 }
@@ -357,6 +376,10 @@ async function* writingRules(inputArray, outputNodeTemplate) {
     const outputDir = outputNodeTemplate.path // 临时目录绝对路径
     const inputPath = path.join(outputDir, '../inputDir');
     const jsonlPath = path.join(inputPath, 'reviewed.jsonl');   // 框架写到这里
+    const outputNode={
+        ...outputNodeTemplate,
+        path:inputPath
+    }
 
     // 步骤1：找到上一规则输出的 result.xlsx
     const sourceFile = inputArray.find(file => file.normExt === 'xlsx' && file.name === 'result');
@@ -399,10 +422,7 @@ async function* writingRules(inputArray, outputNodeTemplate) {
 
     // ★ 步骤5：前置结论（名称缺失的）先落盘，同样携带原行数据（自包含记录）
     for (const [rowIdx, verdict] of preVerdicts) {
-        yield makeJsonlNode({
-            ...outputNodeTemplate,
-            path:inputPath
-        }, {
+        yield makeJsonlNode(outputNode, {
             rowIdx: rowIdx,
             ...sourceRows[rowIdx],
             'AI评审': verdict.verdict,
@@ -412,7 +432,7 @@ async function* writingRules(inputArray, outputNodeTemplate) {
 
     // ★ 步骤6：逐条审核，边审边 yield（for await 转发）
     const startTime = Date.now();
-    for await (const node of reviewAll(tasks, sourceRows, outputNodeTemplate, statistics)) {
+    for await (const node of reviewAll(tasks, sourceRows, outputNode, statistics)) {
         yield node;
     }
     const elapsedSec = Math.round((Date.now() - startTime) / 1000);
@@ -447,11 +467,11 @@ async function* writingRules(inputArray, outputNodeTemplate) {
 // ══════════════════════════════════════════════════════════════
 
 module.exports = {
-    name: 'icdAI',
-    version: '1.1.0',
+    name: 'icdAI2union',
+    version: '1.1.1',
     mode: 'stream',
     process: writingRules,
-    description: 'ICD 联合诊断拆分 AI 审核（流式 yield · 只产出 JSONL）：断点续跑，逐条判定"联合诊断=成分1+成分2"是否成立，每条结论（含原行数据）通过 yield 交给框架追加写 reviewed.jsonl；Excel 转换由下游 jsonl2xlsx 插件完成',
+    description: 'ICD 联合诊断拆分 AI 审核（流式 yield · 只产出 JSONL）：防封ip延时，断点续跑，逐条判定,"联合诊断=成分1+成分2"是否成立，每条结论（含原行数据）通过 yield 交给框架追加写 reviewed.jsonl；Excel 转换由下游 jsonl2xlsx 插件完成',
     notes: {
         node: '18.20.4',
         tips: [
