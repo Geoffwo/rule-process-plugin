@@ -117,6 +117,7 @@ rule-process-plugin/
 | jsonl2xlsx | 1.1.1 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/jsonl2xlsx/1.1.1.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/jsonl2xlsx/1.1.1.js) |
 | jsonl2xlsx | 1.1.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/jsonl2xlsx/1.1.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/jsonl2xlsx/1.1.0.js) |
 | jsonl2xlsx | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/jsonl2xlsx/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/jsonl2xlsx/1.0.0.js) |
+| mcp2exe | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/mcp2exe/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/mcp2exe/1.0.0.js) |
 | mysql2xlsx | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/mysql2xlsx/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/mysql2xlsx/1.0.0.js) |
 | opencv2base | 1.0.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/1.0.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/1.0.0.js) |
 | opencv2base | 0.12.0 | [下载](https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/opencv2base/0.12.0.js) | [下载](https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/opencv2base/0.12.0.js) |
