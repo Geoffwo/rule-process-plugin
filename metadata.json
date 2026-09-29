@@ -531,6 +531,14 @@
       }
     }
   },
+  "ocr2txt": {
+    "versions": {
+      "1.0.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/ocr2txt/1.0.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/ocr2txt/1.0.0.js"
+      }
+    }
+  },
   "opencv2base": {
     "versions": {
       "0.1.0": {
