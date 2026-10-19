@@ -94,7 +94,8 @@ async function runRule(args) {
     // 读取规则落盘的 result.json（含生成文件绝对路径 files / 状态 / remark），直接返回给 DSH；
     // 读不到时退回日志文本（保持历史行为）
     try {
-        const resultJson = fs.readFileSync(path.join(args.output, 'result.json'), 'utf8');
+        const resultFile = path.join(args.output, 'result.json');
+        const resultJson = fs.readFileSync(resultFile, 'utf8');
         return { content: [{ type: 'text', text: resultJson }], isError: code !== 0 };
     } catch (e) { /* 无 result.json → 走下方兜底 */ }
     
