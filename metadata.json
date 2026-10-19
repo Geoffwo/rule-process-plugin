@@ -524,6 +524,10 @@
       "1.1.0": {
         "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/mcp2exe/1.1.0.js",
         "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/mcp2exe/1.1.0.js"
+      },
+      "1.2.0": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/mcp2exe/1.2.0.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/mcp2exe/1.2.0.js"
       }
     }
   },
