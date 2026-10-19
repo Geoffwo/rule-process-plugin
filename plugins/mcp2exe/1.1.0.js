@@ -41,6 +41,8 @@ const SERVER_SOURCE = String.raw`
  *   node mcp/mcp-server.js
  */
 const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 
 // MCP SDK 是 ESM，CJS 项目用动态 import 引入
 async function loadSdk() {
@@ -219,7 +221,7 @@ function writingRules(inputArray, outputNodeTemplate, ctx) {
 
 module.exports = {
     name: 'mcp2exe',
-    version: '1.0.0',
+    version: '1.1.0',
     process: writingRules,
     description: 'MCP 服务生成器(rule-process专属)：rely 自动下载 @modelcontextprotocol/sdk，并生成宿主 mcp/mcp-server.js 独立服务脚本',
     rely: {
