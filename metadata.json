@@ -751,6 +751,14 @@
       }
     }
   },
+  "upperCase": {
+    "versions": {
+      "uppeCase": {
+        "gitee": "https://gitee.com/Geoffwo/rule-process-plugin/raw/master/plugins/upperCase/uppeCase.js",
+        "github": "https://raw.githubusercontent.com/Geoffwo/rule-process-plugin/master/plugins/upperCase/uppeCase.js"
+      }
+    }
+  },
   "url2png": {
     "versions": {
       "1.0.0": {
