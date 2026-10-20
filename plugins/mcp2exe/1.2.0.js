@@ -173,9 +173,9 @@ async function start() {
     server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const { name, arguments: args } = request.params;
         const props = {
-            input: path.join(process.cwd(), './examples/inputDir'),    // 默认输入目录
-            output: path.join(process.cwd(), './examples/outputDir'), // 默认输出文件
-            rule: path.join(process.cwd(), './examples/ruleDir') // 默认规则文件
+            input: path.join(HOST_DIR, './examples/inputDir'),    // 默认输入目录
+            output: path.join(HOST_DIR, './examples/outputDir'), // 默认输出文件
+            rule: path.join(HOST_DIR, './examples/ruleDir'), // 默认规则文件
             ...args
         }
         try {
