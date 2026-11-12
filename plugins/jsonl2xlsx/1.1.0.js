@@ -197,5 +197,5 @@ module.exports = {
     output: {
         normExt: 'xlsx文件'
     },
-    rely: { 'exceljs': '^4.4.0' }
+    rely: { 'exceljs': '4.4.0' }
 };
